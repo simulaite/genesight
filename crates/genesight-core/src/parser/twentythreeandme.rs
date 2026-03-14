@@ -1,0 +1,96 @@
+//! Parser for 23andMe raw data format.
+//!
+//! Format: tab-separated with columns `rsid`, `chromosome`, `position`, `genotype`.
+//! Comment lines start with `#`. Genotype is 2 characters (e.g., AA, AG),
+//! `--` for no-call, or `I`/`D` for indels.
+
+use crate::models::{Genotype, SourceFormat, Variant};
+
+use super::ParseError;
+
+/// Parse 23andMe raw data content into variants.
+pub fn parse(content: &str) -> Result<Vec<Variant>, ParseError> {
+    let mut variants = Vec::new();
+
+    for (line_num, line) in content.lines().enumerate() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        // Skip header line
+        if trimmed.starts_with("rsid") {
+            continue;
+        }
+
+        let cols: Vec<&str> = trimmed.split('\t').collect();
+        if cols.len() != 4 {
+            return Err(ParseError::InvalidLine {
+                line: line_num + 1,
+                reason: format!("expected 4 columns, found {}", cols.len()),
+            });
+        }
+
+        let rsid = cols[0].to_string();
+        let chromosome = cols[1].to_string();
+        let position: u64 = cols[2].parse().map_err(|_| ParseError::InvalidLine {
+            line: line_num + 1,
+            reason: format!("invalid position: {}", cols[2]),
+        })?;
+
+        let genotype = parse_genotype(cols[3]);
+
+        variants.push(Variant {
+            rsid: Some(rsid),
+            chromosome,
+            position,
+            genotype,
+            source_format: SourceFormat::TwentyThreeAndMe,
+        });
+    }
+
+    Ok(variants)
+}
+
+fn parse_genotype(s: &str) -> Genotype {
+    match s {
+        "--" => Genotype::NoCall,
+        "I" | "II" => Genotype::Indel("I".to_string()),
+        "D" | "DD" => Genotype::Indel("D".to_string()),
+        "DI" | "ID" => Genotype::Indel("DI".to_string()),
+        s if s.len() == 2 => {
+            let mut chars = s.chars();
+            let a = chars.next().unwrap();
+            let b = chars.next().unwrap();
+            if a == b {
+                Genotype::Homozygous(a)
+            } else {
+                Genotype::Heterozygous(a, b)
+            }
+        }
+        s if s.len() == 1 => Genotype::Homozygous(s.chars().next().unwrap()),
+        _ => Genotype::NoCall,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_basic_23andme() {
+        let content = "\
+# rsid\tchromosome\tposition\tgenotype
+rsid\tchromosome\tposition\tgenotype
+rs4477212\t1\t82154\tAA
+rs3094315\t1\t752566\tAG
+rs3131972\t1\t752721\t--
+";
+        let variants = parse(content).unwrap();
+        assert_eq!(variants.len(), 3);
+        assert_eq!(variants[0].rsid, Some("rs4477212".to_string()));
+        assert_eq!(variants[0].genotype, Genotype::Homozygous('A'));
+        assert_eq!(variants[0].source_format, SourceFormat::TwentyThreeAndMe);
+        assert_eq!(variants[1].genotype, Genotype::Heterozygous('A', 'G'));
+        assert_eq!(variants[2].genotype, Genotype::NoCall);
+    }
+}
