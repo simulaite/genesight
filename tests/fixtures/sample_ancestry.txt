@@ -1,0 +1,15 @@
+#AncestryDNA raw data download
+#SYNTHETIC TEST DATA — NOT REAL HUMAN DNA
+#This file was generated for testing purposes only
+#Date: 2023-10-05
+rsid	chromosome	position	allele1	allele2
+rs4477212	1	82154	A	A
+rs3094315	1	752566	A	G
+rs3131972	1	752721	G	G
+rs12124819	1	776546	A	A
+rs11240777	1	798959	A	G
+rs6681049	1	800007	C	C
+rs4970383	1	838555	A	C
+rs4475691	1	846808	C	T
+rs7537756	1	854250	A	A
+rs13302982	1	861808	G	G
