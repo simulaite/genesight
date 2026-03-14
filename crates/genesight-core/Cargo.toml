@@ -1,0 +1,14 @@
+[package]
+name = "genesight-core"
+description = "Core library for GeneSight DNA analysis: parsers, annotators, scorers, and report generation"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+rusqlite = { workspace = true }
+tracing = { workspace = true }
