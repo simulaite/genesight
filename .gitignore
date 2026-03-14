@@ -1,0 +1,32 @@
+# Build artifacts
+/target/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Raw downloaded data (large files, re-downloadable)
+/data/raw/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+
+# DNA raw data — NEVER commit real DNA data
+*.23andme.txt
+*.ancestry.txt
+*.genome.txt
+
+# PGP test data (real public-domain genomes, download separately)
+/tests/fixtures/pgp/*.txt
