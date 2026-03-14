@@ -1,0 +1,18 @@
+[package]
+name = "genesight-cli"
+description = "CLI tool for GeneSight DNA analysis"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "genesight"
+path = "src/main.rs"
+
+[dependencies]
+genesight-core = { workspace = true }
+clap = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
