@@ -45,6 +45,7 @@ VARIANTS = [
     ("rs9923231", "16", 31096368, "C", "T"),        # VKORC1
     ("rs1045642", "7", 87509329, "A", "G"),         # ABCB1
     ("rs12248560", "10", 94761900, "C", "T"),       # CYP2C19*17
+    ("rs4149056", "12", 21178615, "T", "C"),         # SLCO1B1*5
     # --- GWAS polygenic ---
     ("rs9939609", "16", 53786615, "T", "A"),        # FTO
     ("rs7903146", "10", 112998590, "C", "T"),       # TCF7L2
@@ -65,6 +66,16 @@ VARIANTS = [
     ("rs12913832", "15", 28120472, "A", "G"),       # HERC2/OCA2
     ("rs1426654", "15", 48426484, "A", "G"),        # SLC24A5
     ("rs4680", "22", 19963748, "G", "A"),           # COMT
+    # --- New PGx expansion (CYP3A5, DPYD, TPMT, NUDT15) ---
+    ("rs776746", "7", 99652770, "A", "G"),            # CYP3A5*3
+    ("rs3918290", "1", 97915614, "C", "T"),           # DPYD*2A
+    ("rs55886062", "1", 97981343, "A", "C"),          # DPYD*13
+    ("rs67376798", "1", 97450058, "T", "A"),          # DPYD c.2846A>T
+    ("rs75017182", "1", 98348885, "C", "T"),          # DPYD HapB3
+    ("rs1800462", "6", 18130918, "G", "C"),           # TPMT*2
+    ("rs1800460", "6", 18139422, "C", "T"),           # TPMT*3B/*3A
+    ("rs1142345", "6", 18143606, "T", "C"),           # TPMT*3C/*3A
+    ("rs116855232", "13", 45003967, "C", "T"),        # NUDT15*3
 ]
 
 # ============================================================
@@ -269,6 +280,7 @@ FREQUENCY_ENTRIES = [
     ("rs9923231",   0.3200,  0.1000, 0.4000, 0.9200, 0.3900, 0.1500, "gnomad"),
     ("rs1045642",   0.4800,  0.1800, 0.4300, 0.6000, 0.5300, 0.5500, "gnomad"),
     ("rs12248560",  0.2100,  0.2400, 0.1400, 0.0100, 0.2100, 0.1500, "gnomad"),
+    ("rs4149056",   0.0800,  0.0200, 0.0600, 0.1000, 0.0800, 0.0500, "gnomad"),
     # --- GWAS variants (common) ---
     ("rs9939609",   0.4200,  0.4900, 0.3000, 0.1400, 0.4100, 0.3100, "gnomad"),
     ("rs7903146",   0.3000,  0.2800, 0.2400, 0.0400, 0.3000, 0.3100, "gnomad"),
@@ -289,6 +301,16 @@ FREQUENCY_ENTRIES = [
     ("rs12913832",  0.2500,  0.0200, 0.0900, 0.0100, 0.7200, 0.0500, "gnomad"),
     ("rs1426654",   0.4500,  0.0400, 0.5500, 0.0100, 0.9900, 0.6500, "gnomad"),
     ("rs4680",      0.4800,  0.3300, 0.4700, 0.2800, 0.5000, 0.4300, "gnomad"),
+    # --- New PGx expansion variants ---
+    ("rs776746",    0.9300,  0.2700, 0.8200, 0.7100, 0.9500, 0.8100, "gnomad"),
+    ("rs3918290",   0.0100,  0.0020, 0.0050, 0.0010, 0.0180, 0.0030, "gnomad"),
+    ("rs55886062",  0.0030,  0.0010, 0.0020, 0.0010, 0.0060, 0.0010, "gnomad"),
+    ("rs67376798",  0.0120,  0.0030, 0.0080, 0.0020, 0.0200, 0.0050, "gnomad"),
+    ("rs75017182",  0.0160,  0.0040, 0.0100, 0.0030, 0.0260, 0.0070, "gnomad"),
+    ("rs1800462",   0.0030,  0.0020, 0.0030, 0.0010, 0.0050, 0.0020, "gnomad"),
+    ("rs1800460",   0.0400,  0.0200, 0.0300, 0.0050, 0.0450, 0.0200, "gnomad"),
+    ("rs1142345",   0.0450,  0.0550, 0.0350, 0.0220, 0.0480, 0.0250, "gnomad"),
+    ("rs116855232", 0.0400,  0.0080, 0.0800, 0.1200, 0.0040, 0.0200, "gnomad"),
 ]
 
 # ============================================================
@@ -393,6 +415,182 @@ SNPEDIA_ENTRIES = [
     ),
 ]
 
+# ============================================================
+# PGx Allele Definitions (CPIC-style star allele mapping)
+# ============================================================
+
+PGX_ALLELE_DEFINITIONS = [
+    # gene, allele_name, rsid, alt_allele, function, activity_score
+    # --- CYP2C19 ---
+    ("CYP2C19", "*2", "rs4244285", "A", "No Function", 0.0),
+    ("CYP2C19", "*3", "rs4986893", "A", "No Function", 0.0),
+    ("CYP2C19", "*17", "rs12248560", "T", "Increased Function", 1.5),
+    # --- CYP2D6 ---
+    ("CYP2D6", "*4", "rs3892097", "A", "No Function", 0.0),
+    # --- CYP2C9 ---
+    ("CYP2C9", "*2", "rs1799853", "T", "Decreased Function", 0.5),
+    ("CYP2C9", "*3", "rs1057910", "C", "No Function", 0.0),
+    # --- SLCO1B1 ---
+    ("SLCO1B1", "*5", "rs4149056", "C", "Decreased Function", 0.5),
+    # --- CYP3A5 ---
+    ("CYP3A5", "*3", "rs776746", "G", "No Function", 0.0),
+    # --- DPYD ---
+    ("DPYD", "*2A", "rs3918290", "T", "No Function", 0.0),
+    ("DPYD", "*13", "rs55886062", "C", "No Function", 0.0),
+    ("DPYD", "c.2846A>T", "rs67376798", "A", "Decreased Function", 0.5),
+    ("DPYD", "HapB3", "rs75017182", "T", "Decreased Function", 0.5),
+    # --- TPMT ---
+    ("TPMT", "*2", "rs1800462", "C", "No Function", 0.0),
+    ("TPMT", "*3A", "rs1800460", "T", "No Function", 0.0),
+    ("TPMT", "*3A", "rs1142345", "C", "No Function", 0.0),
+    ("TPMT", "*3B", "rs1800460", "T", "No Function", 0.0),
+    ("TPMT", "*3C", "rs1142345", "C", "No Function", 0.0),
+    # --- NUDT15 ---
+    ("NUDT15", "*3", "rs116855232", "T", "No Function", 0.0),
+    # --- VKORC1 ---
+    ("VKORC1", "-1639A", "rs9923231", "T", "Low Warfarin Dose", 0.5),
+]
+
+# ============================================================
+# PGx Diplotype-to-Phenotype mapping
+# ============================================================
+
+PGX_DIPLOTYPE_PHENOTYPES = [
+    # gene, diplotype, phenotype, activity_score
+    # --- CYP2C19 ---
+    ("CYP2C19", "*1/*1", "Normal Metabolizer", 2.0),
+    ("CYP2C19", "*1/*2", "Intermediate Metabolizer", 1.0),
+    ("CYP2C19", "*2/*2", "Poor Metabolizer", 0.0),
+    ("CYP2C19", "*1/*17", "Rapid Metabolizer", 2.5),
+    ("CYP2C19", "*17/*17", "Ultrarapid Metabolizer", 3.0),
+    # --- CYP2D6 ---
+    ("CYP2D6", "*1/*1", "Normal Metabolizer", 2.0),
+    ("CYP2D6", "*1/*4", "Intermediate Metabolizer", 1.0),
+    ("CYP2D6", "*4/*4", "Poor Metabolizer", 0.0),
+    # --- CYP2C9 ---
+    ("CYP2C9", "*1/*1", "Normal Metabolizer", 2.0),
+    ("CYP2C9", "*1/*2", "Intermediate Metabolizer", 1.5),
+    ("CYP2C9", "*1/*3", "Intermediate Metabolizer", 1.0),
+    ("CYP2C9", "*2/*3", "Poor Metabolizer", 0.5),
+    ("CYP2C9", "*3/*3", "Poor Metabolizer", 0.0),
+    # --- SLCO1B1 ---
+    ("SLCO1B1", "*1/*1", "Normal Function", 2.0),
+    ("SLCO1B1", "*1/*5", "Intermediate Function", 1.5),
+    ("SLCO1B1", "*5/*5", "Poor Function", 1.0),
+    # --- CYP3A5 ---
+    ("CYP3A5", "*1/*1", "Extensive Metabolizer", 2.0),
+    ("CYP3A5", "*1/*3", "Intermediate Metabolizer", 1.0),
+    ("CYP3A5", "*3/*3", "Poor Metabolizer", 0.0),
+    # --- DPYD ---
+    ("DPYD", "*1/*1", "Normal DPD Activity", 2.0),
+    ("DPYD", "*1/*2A", "Intermediate DPD Activity", 1.0),
+    ("DPYD", "*2A/*2A", "Poor DPD Activity (DPD Deficient)", 0.0),
+    ("DPYD", "*1/*13", "Intermediate DPD Activity", 1.0),
+    ("DPYD", "*1/c.2846A>T", "Intermediate DPD Activity", 1.5),
+    ("DPYD", "*1/HapB3", "Intermediate DPD Activity", 1.5),
+    # --- TPMT ---
+    ("TPMT", "*1/*1", "Normal Metabolizer", 2.0),
+    ("TPMT", "*1/*2", "Intermediate Metabolizer", 1.0),
+    ("TPMT", "*1/*3A", "Intermediate Metabolizer", 1.0),
+    ("TPMT", "*1/*3B", "Intermediate Metabolizer", 1.0),
+    ("TPMT", "*1/*3C", "Intermediate Metabolizer", 1.0),
+    ("TPMT", "*3A/*3A", "Poor Metabolizer", 0.0),
+    ("TPMT", "*3A/*3C", "Poor Metabolizer", 0.0),
+    # --- NUDT15 ---
+    ("NUDT15", "*1/*1", "Normal Metabolizer", 2.0),
+    ("NUDT15", "*1/*3", "Intermediate Metabolizer", 1.0),
+    ("NUDT15", "*3/*3", "Poor Metabolizer", 0.0),
+    # --- VKORC1 ---
+    ("VKORC1", "GG", "Normal Warfarin Sensitivity", 2.0),
+    ("VKORC1", "GA", "Increased Warfarin Sensitivity", 1.5),
+    ("VKORC1", "AA", "Highly Increased Warfarin Sensitivity", 1.0),
+]
+
+# ============================================================
+# PGx Drug Recommendations
+# ============================================================
+
+PGX_DRUG_RECOMMENDATIONS = [
+    # gene, drug, phenotype, recommendation, evidence_level
+    # --- CYP2C19 + clopidogrel ---
+    ("CYP2C19", "clopidogrel", "Normal Metabolizer",
+     "Use clopidogrel at standard dose.", "1A"),
+    ("CYP2C19", "clopidogrel", "Intermediate Metabolizer",
+     "Consider alternative antiplatelet (prasugrel, ticagrelor) due to reduced clopidogrel activation.", "1A"),
+    ("CYP2C19", "clopidogrel", "Poor Metabolizer",
+     "Avoid clopidogrel. Use prasugrel or ticagrelor. CYP2C19 poor metabolizers have greatly reduced activation.", "1A"),
+    # --- CYP2D6 + codeine ---
+    ("CYP2D6", "codeine", "Normal Metabolizer",
+     "Use codeine at standard dose.", "1A"),
+    ("CYP2D6", "codeine", "Intermediate Metabolizer",
+     "Use codeine with caution at reduced dose, or consider alternative analgesic.", "1A"),
+    ("CYP2D6", "codeine", "Poor Metabolizer",
+     "Avoid codeine. Use alternative analgesics such as morphine or a non-opioid.", "1A"),
+    # --- CYP2C9 + warfarin ---
+    ("CYP2C9", "warfarin", "Normal Metabolizer",
+     "Use standard warfarin dosing algorithm.", "1A"),
+    ("CYP2C9", "warfarin", "Intermediate Metabolizer",
+     "Reduce initial warfarin dose by 20-40%. Monitor INR closely.", "1A"),
+    ("CYP2C9", "warfarin", "Poor Metabolizer",
+     "Reduce initial warfarin dose by 40-70%. Significantly increased bleeding risk.", "1A"),
+    # --- CYP3A5 + tacrolimus ---
+    ("CYP3A5", "tacrolimus", "Extensive Metabolizer",
+     "Increase starting dose by 1.5-2x. CYP3A5 expressers metabolize tacrolimus rapidly.", "1A"),
+    ("CYP3A5", "tacrolimus", "Intermediate Metabolizer",
+     "Increase starting dose by 1.25-1.5x. Monitor trough levels closely.", "1A"),
+    ("CYP3A5", "tacrolimus", "Poor Metabolizer",
+     "Use standard recommended starting dose. CYP3A5 non-expressers have normal tacrolimus metabolism.", "1A"),
+    # --- DPYD + fluorouracil ---
+    ("DPYD", "fluorouracil", "Normal DPD Activity",
+     "Use standard fluorouracil dosing.", "1A"),
+    ("DPYD", "fluorouracil", "Intermediate DPD Activity",
+     "Reduce fluorouracil dose by 50%. Increased risk of severe/fatal toxicity.", "1A"),
+    ("DPYD", "fluorouracil", "Poor DPD Activity (DPD Deficient)",
+     "Avoid fluorouracil and fluorouracil-based regimens. Use alternative chemotherapy.", "1A"),
+    # --- DPYD + capecitabine ---
+    ("DPYD", "capecitabine", "Normal DPD Activity",
+     "Use standard capecitabine dosing.", "1A"),
+    ("DPYD", "capecitabine", "Intermediate DPD Activity",
+     "Reduce capecitabine dose by 50%. Increased risk of severe/fatal toxicity.", "1A"),
+    ("DPYD", "capecitabine", "Poor DPD Activity (DPD Deficient)",
+     "Avoid capecitabine. Use alternative chemotherapy.", "1A"),
+    # --- TPMT + azathioprine ---
+    ("TPMT", "azathioprine", "Normal Metabolizer",
+     "Use standard azathioprine dose.", "1A"),
+    ("TPMT", "azathioprine", "Intermediate Metabolizer",
+     "Reduce azathioprine dose by 30-70%. Start low and titrate based on tolerance.", "1A"),
+    ("TPMT", "azathioprine", "Poor Metabolizer",
+     "Avoid azathioprine or use 10% of standard dose with frequent monitoring.", "1A"),
+    # --- TPMT + mercaptopurine ---
+    ("TPMT", "mercaptopurine", "Normal Metabolizer",
+     "Use standard mercaptopurine dose.", "1A"),
+    ("TPMT", "mercaptopurine", "Intermediate Metabolizer",
+     "Reduce mercaptopurine dose by 30-70%. Start low and titrate based on tolerance.", "1A"),
+    ("TPMT", "mercaptopurine", "Poor Metabolizer",
+     "Avoid mercaptopurine or use 10% of standard dose with frequent monitoring.", "1A"),
+    # --- NUDT15 + azathioprine ---
+    ("NUDT15", "azathioprine", "Normal Metabolizer",
+     "Use standard azathioprine dose.", "1A"),
+    ("NUDT15", "azathioprine", "Intermediate Metabolizer",
+     "Reduce azathioprine dose by 25-50%. Monitor for myelosuppression.", "1A"),
+    ("NUDT15", "azathioprine", "Poor Metabolizer",
+     "Avoid azathioprine or use drastically reduced dose (10%). High risk of myelosuppression.", "1A"),
+    # --- NUDT15 + mercaptopurine ---
+    ("NUDT15", "mercaptopurine", "Normal Metabolizer",
+     "Use standard mercaptopurine dose.", "1A"),
+    ("NUDT15", "mercaptopurine", "Intermediate Metabolizer",
+     "Reduce mercaptopurine dose by 25-50%. Monitor for myelosuppression.", "1A"),
+    ("NUDT15", "mercaptopurine", "Poor Metabolizer",
+     "Avoid mercaptopurine or use drastically reduced dose (10%). High risk of myelosuppression.", "1A"),
+    # --- VKORC1 + warfarin ---
+    ("VKORC1", "warfarin", "Normal Warfarin Sensitivity",
+     "Use standard warfarin dosing algorithm.", "1A"),
+    ("VKORC1", "warfarin", "Increased Warfarin Sensitivity",
+     "Reduce initial warfarin dose. Use pharmacogenomic dosing algorithm (IWPC or Gage).", "1A"),
+    ("VKORC1", "warfarin", "Highly Increased Warfarin Sensitivity",
+     "Significantly reduce initial warfarin dose. Homozygous VKORC1 -1639A requires lowest dose tier.", "1A"),
+]
+
 
 # ============================================================
 # Database creation functions
@@ -486,6 +684,48 @@ def create_main_db(db_path: str) -> dict:
     """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_pharma_rsid ON pharmacogenomics(rsid)")
 
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS pgx_allele_definitions (
+            gene TEXT NOT NULL,
+            allele_name TEXT NOT NULL,
+            rsid TEXT REFERENCES variants(rsid),
+            alt_allele TEXT NOT NULL,
+            function TEXT NOT NULL,
+            activity_score REAL NOT NULL
+        )
+    """)
+    cur.execute(
+        "CREATE INDEX IF NOT EXISTS idx_pgx_allele_gene ON pgx_allele_definitions(gene)"
+    )
+    cur.execute(
+        "CREATE INDEX IF NOT EXISTS idx_pgx_allele_rsid ON pgx_allele_definitions(rsid)"
+    )
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS pgx_diplotype_phenotypes (
+            gene TEXT NOT NULL,
+            diplotype TEXT NOT NULL,
+            phenotype TEXT NOT NULL,
+            activity_score REAL NOT NULL
+        )
+    """)
+    cur.execute(
+        "CREATE INDEX IF NOT EXISTS idx_pgx_diplo_gene ON pgx_diplotype_phenotypes(gene)"
+    )
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS pgx_drug_recommendations (
+            gene TEXT NOT NULL,
+            drug TEXT NOT NULL,
+            phenotype TEXT NOT NULL,
+            recommendation TEXT NOT NULL,
+            evidence_level TEXT NOT NULL
+        )
+    """)
+    cur.execute(
+        "CREATE INDEX IF NOT EXISTS idx_pgx_drug_gene ON pgx_drug_recommendations(gene)"
+    )
+
     # --- Insert data ---
     cur.executemany(
         "INSERT INTO variants (rsid, chromosome, position, ref_allele, alt_allele) "
@@ -517,11 +757,31 @@ def create_main_db(db_path: str) -> dict:
         PHARMACOGENOMICS_ENTRIES,
     )
 
+    cur.executemany(
+        "INSERT INTO pgx_allele_definitions (gene, allele_name, rsid, alt_allele, "
+        "function, activity_score) VALUES (?, ?, ?, ?, ?, ?)",
+        PGX_ALLELE_DEFINITIONS,
+    )
+
+    cur.executemany(
+        "INSERT INTO pgx_diplotype_phenotypes (gene, diplotype, phenotype, "
+        "activity_score) VALUES (?, ?, ?, ?)",
+        PGX_DIPLOTYPE_PHENOTYPES,
+    )
+
+    cur.executemany(
+        "INSERT INTO pgx_drug_recommendations (gene, drug, phenotype, "
+        "recommendation, evidence_level) VALUES (?, ?, ?, ?, ?)",
+        PGX_DRUG_RECOMMENDATIONS,
+    )
+
     conn.commit()
 
     # Collect statistics
     stats = {}
-    for table in ["schema_version", "variants", "clinvar", "gwas", "frequencies", "pharmacogenomics"]:
+    for table in ["schema_version", "variants", "clinvar", "gwas", "frequencies",
+                   "pharmacogenomics", "pgx_allele_definitions", "pgx_diplotype_phenotypes",
+                   "pgx_drug_recommendations"]:
         count = cur.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]  # noqa: S608
         stats[table] = count
 
