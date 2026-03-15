@@ -283,9 +283,10 @@ impl App {
             ResultCategory::MonogenicDisease,
             ResultCategory::CarrierStatus,
             ResultCategory::Pharmacogenomics,
-            ResultCategory::PolygenicRiskScore,
+            ResultCategory::GwasAssociation,
             ResultCategory::PhysicalTrait,
             ResultCategory::ComplexTrait,
+            ResultCategory::ClinVarConflicting,
         ];
         categories
             .iter()

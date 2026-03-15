@@ -144,9 +144,7 @@ fn draw_loading(frame: &mut Frame, app: &App) {
         lines.push(Line::raw(""));
         lines.push(Line::from(Span::styled(
             format!(" Error: {err}"),
-            Style::default()
-                .fg(Color::Red)
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
         )));
         lines.push(Line::from(Span::styled(
             " Press q to quit",
@@ -283,10 +281,7 @@ fn generate_dna_helix(width: u16, height: u16, tick: usize) -> Vec<Line<'static>
             for (ch, si) in row {
                 if si != cur {
                     if !buf.is_empty() {
-                        spans.push(Span::styled(
-                            std::mem::take(&mut buf),
-                            styles[cur],
-                        ));
+                        spans.push(Span::styled(std::mem::take(&mut buf), styles[cur]));
                     }
                     cur = si;
                 }
@@ -367,9 +362,7 @@ fn draw_summary(frame: &mut Frame, app: &App, area: Rect) {
             lines.push(Line::raw(""));
             lines.push(Line::from(Span::styled(
                 format!("   Disease Risk ({} variants)", monogenic.len()),
-                Style::default()
-                    .fg(Color::Red)
-                    .add_modifier(Modifier::BOLD),
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
             )));
             for r in &monogenic {
                 let gene = app.gene_name(r);
@@ -498,11 +491,7 @@ fn draw_summary(frame: &mut Frame, app: &App, area: Rect) {
     )));
     lines.push(Line::raw(""));
 
-    let max_count = category_counts
-        .iter()
-        .map(|(_, c)| *c)
-        .max()
-        .unwrap_or(1);
+    let max_count = category_counts.iter().map(|(_, c)| *c).max().unwrap_or(1);
     let bar_max_width: usize = 30;
 
     for (cat, count) in &category_counts {
@@ -547,17 +536,36 @@ fn draw_summary(frame: &mut Frame, app: &App, area: Rect) {
     let pct3 = t3 as f64 / total as f64 * 100.0;
 
     for (label, count, pct, color, desc) in [
-        ("Tier 1", t1, pct1, TIER1_COLOR, "Clinically reliable (>95%)"),
+        (
+            "Tier 1",
+            t1,
+            pct1,
+            TIER1_COLOR,
+            "Clinically reliable (>95%)",
+        ),
         ("Tier 2", t2, pct2, TIER2_COLOR, "Probable (60-85%)"),
         ("Tier 3", t3, pct3, TIER3_COLOR, "Speculative (50-65%)"),
     ] {
-        let bar_len = (pct / 100.0 * bar_max_width as f64).ceil().max(if count > 0 { 1.0 } else { 0.0 }) as usize;
+        let bar_len = (pct / 100.0 * bar_max_width as f64)
+            .ceil()
+            .max(if count > 0 { 1.0 } else { 0.0 }) as usize;
         let bar = "\u{2588}".repeat(bar_len);
         lines.push(Line::from(vec![
-            Span::styled(format!("   {label}"), Style::default().fg(color).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                format!("   {label}"),
+                Style::default().fg(color).add_modifier(Modifier::BOLD),
+            ),
             Span::raw("   "),
-            Span::styled(format!("{count:>6}"), Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
-            Span::styled(format!(" ({pct:.1}%)"), Style::default().fg(Color::DarkGray)),
+            Span::styled(
+                format!("{count:>6}"),
+                Style::default()
+                    .fg(Color::White)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!(" ({pct:.1}%)"),
+                Style::default().fg(Color::DarkGray),
+            ),
             Span::raw("  "),
             Span::styled(bar, Style::default().fg(color)),
         ]));
@@ -585,10 +593,7 @@ fn draw_summary(frame: &mut Frame, app: &App, area: Rect) {
                     .fg(Color::White)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::styled(
-                format!("  ({t2} total)"),
-                Style::default().fg(TIER2_COLOR),
-            ),
+            Span::styled(format!("  ({t2} total)"), Style::default().fg(TIER2_COLOR)),
         ]));
         lines.push(Line::from(Span::styled(
             " \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}",
@@ -602,13 +607,18 @@ fn draw_summary(frame: &mut Frame, app: &App, area: Rect) {
             let summary = truncate_str(&r.summary, 50);
             lines.push(Line::from(vec![
                 Span::styled("   \u{25cb} ", Style::default().fg(TIER2_COLOR)),
-                Span::styled(
-                    format!("[{cat}]"),
-                    Style::default().fg(Color::DarkGray),
-                ),
+                Span::styled(format!("[{cat}]"), Style::default().fg(Color::DarkGray)),
                 Span::raw(" "),
-                Span::styled(gene, Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
-                Span::styled(format!(" \u{2014} {summary}"), Style::default().fg(Color::Gray)),
+                Span::styled(
+                    gene,
+                    Style::default()
+                        .fg(Color::White)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(
+                    format!(" \u{2014} {summary}"),
+                    Style::default().fg(Color::Gray),
+                ),
             ]));
         }
     }
@@ -624,9 +634,7 @@ fn draw_summary(frame: &mut Frame, app: &App, area: Rect) {
                 .add_modifier(Modifier::BOLD),
         ),
         Span::styled(
-            format!(
-                "Most findings ({t3}) are Tier 3 GWAS associations with small effect sizes. ",
-            ),
+            format!("Most findings ({t3}) are Tier 3 GWAS associations with small effect sizes. ",),
             Style::default().fg(Color::DarkGray),
         ),
     ]));
@@ -672,10 +680,11 @@ fn category_color(cat: ResultCategory) -> Color {
         ResultCategory::MonogenicDisease => Color::Red,
         ResultCategory::CarrierStatus => Color::Blue,
         ResultCategory::Pharmacogenomics => Color::Magenta,
-        ResultCategory::PolygenicRiskScore => Color::Yellow,
+        ResultCategory::GwasAssociation => Color::Yellow,
         ResultCategory::PhysicalTrait => Color::Cyan,
         ResultCategory::ComplexTrait => Color::DarkGray,
         ResultCategory::Ancestry => Color::White,
+        ResultCategory::ClinVarConflicting => Color::DarkGray,
     }
 }
 
@@ -1266,7 +1275,10 @@ fn draw_footer(frame: &mut Frame, app: &App, area: Rect) {
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::styled(dv.search_query.to_string(), Style::default().fg(Color::White)),
+            Span::styled(
+                dv.search_query.to_string(),
+                Style::default().fg(Color::White),
+            ),
             Span::styled(
                 "_",
                 Style::default()
@@ -1410,10 +1422,11 @@ fn short_category(cat: genesight_core::models::ResultCategory) -> String {
         ResultCategory::MonogenicDisease => "Disease".to_string(),
         ResultCategory::CarrierStatus => "Carrier".to_string(),
         ResultCategory::Pharmacogenomics => "Pharma".to_string(),
-        ResultCategory::PolygenicRiskScore => "PRS".to_string(),
+        ResultCategory::GwasAssociation => "GWAS".to_string(),
         ResultCategory::PhysicalTrait => "Trait".to_string(),
         ResultCategory::ComplexTrait => "Complex".to_string(),
         ResultCategory::Ancestry => "Ancestry".to_string(),
+        ResultCategory::ClinVarConflicting => "Conflicting".to_string(),
     }
 }
 

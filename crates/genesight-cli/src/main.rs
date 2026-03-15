@@ -32,8 +32,8 @@ enum Commands {
         #[arg(long, short, default_value = "markdown")]
         format: Format,
 
-        /// Which tiers to include (comma-separated, e.g., "1,2,3")
-        #[arg(long, short, default_value = "1,2,3")]
+        /// Which tiers to include (comma-separated, e.g., "1,2" or "1,2,3")
+        #[arg(long, short, default_value = "1,2")]
         tiers: String,
 
         /// Path to the main GeneSight database
