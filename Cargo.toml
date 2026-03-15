@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/genesight-core",
     "crates/genesight-cli",
+    "crates/genesight-gui",
     "crates/genesight-server",
 ]
 
