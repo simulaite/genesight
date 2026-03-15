@@ -35,6 +35,7 @@ pub mod db;
 pub mod models;
 pub mod normalizer;
 pub mod parser;
+pub mod pgx;
 pub mod report;
 pub mod scorer;
 

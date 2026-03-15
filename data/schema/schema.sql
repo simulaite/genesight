@@ -79,6 +79,37 @@ CREATE TABLE IF NOT EXISTS pharmacogenomics (
 );
 CREATE INDEX IF NOT EXISTS idx_pharma_rsid ON pharmacogenomics(rsid);
 
+-- PGx star allele definitions (CPIC-style)
+CREATE TABLE IF NOT EXISTS pgx_allele_definitions (
+    gene TEXT NOT NULL,                 -- Gene symbol (e.g., "CYP2D6")
+    allele_name TEXT NOT NULL,          -- Star allele name (e.g., "*4")
+    rsid TEXT REFERENCES variants(rsid),
+    alt_allele TEXT NOT NULL,           -- Alternate allele defining this star allele
+    function TEXT NOT NULL,             -- "No Function", "Decreased Function", "Increased Function", etc.
+    activity_score REAL NOT NULL        -- Numeric activity score for phenotype calculation
+);
+CREATE INDEX IF NOT EXISTS idx_pgx_allele_gene ON pgx_allele_definitions(gene);
+CREATE INDEX IF NOT EXISTS idx_pgx_allele_rsid ON pgx_allele_definitions(rsid);
+
+-- PGx diplotype-to-phenotype mapping
+CREATE TABLE IF NOT EXISTS pgx_diplotype_phenotypes (
+    gene TEXT NOT NULL,                 -- Gene symbol
+    diplotype TEXT NOT NULL,            -- e.g., "*1/*2", "*4/*4"
+    phenotype TEXT NOT NULL,            -- e.g., "Poor Metabolizer"
+    activity_score REAL NOT NULL        -- Combined activity score for this diplotype
+);
+CREATE INDEX IF NOT EXISTS idx_pgx_diplo_gene ON pgx_diplotype_phenotypes(gene);
+
+-- PGx drug recommendations (CPIC guideline-style)
+CREATE TABLE IF NOT EXISTS pgx_drug_recommendations (
+    gene TEXT NOT NULL,                 -- Gene symbol
+    drug TEXT NOT NULL,                 -- Drug name
+    phenotype TEXT NOT NULL,            -- Required phenotype for this recommendation
+    recommendation TEXT NOT NULL,       -- Clinical recommendation text
+    evidence_level TEXT NOT NULL        -- CPIC evidence level (1A, 1B, 2A, etc.)
+);
+CREATE INDEX IF NOT EXISTS idx_pgx_drug_gene ON pgx_drug_recommendations(gene);
+
 
 -- ============================================================
 -- snpedia.db — Separate optional database (CC-BY-NC-SA 3.0)
