@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS clinvar (
     review_status INTEGER,              -- 0-4 stars
     conditions TEXT,                    -- JSON array of conditions
     gene_symbol TEXT,
+    classification_type TEXT DEFAULT 'germline',  -- germline, somatic, oncogenicity
     last_updated DATE
 );
 CREATE INDEX IF NOT EXISTS idx_clinvar_rsid ON clinvar(rsid);

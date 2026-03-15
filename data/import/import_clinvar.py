@@ -26,22 +26,29 @@ COL_PHENOTYPE_LIST = 13
 COL_ASSEMBLY = 16
 COL_CHROMOSOME = 18
 COL_START = 19
-COL_REF_ALLELE = 21
-COL_ALT_ALLELE = 22
+COL_REF_ALLELE_HGVS = 21  # Often "na" — not useful
+COL_ALT_ALLELE_HGVS = 22  # Often "na" — not useful
 COL_REVIEW_STATUS = 24
+COL_REF_ALLELE_VCF = 32   # VCF-style ref allele — populated for 99.999% of entries
+COL_ALT_ALLELE_VCF = 33   # VCF-style alt allele — populated for 99.999% of entries
+COL_ORIGIN = 14
+COL_SOMATIC_SIGNIFICANCE = 34
+COL_ONCOGENICITY = 37
 
 # ---------------------------------------------------------------------------
 # Review-status text → star rating
 # ---------------------------------------------------------------------------
 REVIEW_STARS = {
     "practice guideline": 4,
-    "reviewed by expert panel": 4,
-    "criteria provided, multiple submitters, no conflicts": 3,
-    "criteria provided, conflicting classifications": 2,
-    "criteria provided, conflicting interpretations of pathogenicity": 2,
-    "criteria provided, single submitter": 2,
-    "no assertion criteria provided": 1,
+    "reviewed by expert panel": 3,
+    "criteria provided, multiple submitters, no conflicts": 2,
+    "criteria provided, conflicting classifications": 1,
+    "criteria provided, conflicting interpretations of pathogenicity": 1,
+    "criteria provided, single submitter": 1,
+    "no assertion criteria provided": 0,
     "no assertion provided": 0,
+    "no classification provided": 0,
+    "no classifications from unflagged records": 0,
 }
 
 # ---------------------------------------------------------------------------
@@ -63,7 +70,8 @@ CREATE TABLE IF NOT EXISTS clinvar (
     review_status INTEGER,
     conditions TEXT,
     gene_symbol TEXT,
-    last_updated DATE
+    last_updated DATE,
+    classification_type TEXT DEFAULT 'germline'
 );
 CREATE INDEX IF NOT EXISTS idx_clinvar_rsid ON clinvar(rsid);
 """
@@ -80,6 +88,25 @@ def parse_conditions(phenotype_list: str) -> str:
         return "[]"
     conditions = [c.strip() for c in phenotype_list.split("|") if c.strip()]
     return json.dumps(conditions, ensure_ascii=False)
+
+
+def determine_classification_type(fields: list[str]) -> str:
+    """Determine germline/somatic/oncogenicity from ClinVar variant_summary row."""
+    origin = fields[COL_ORIGIN].strip().lower() if len(fields) > COL_ORIGIN else ""
+    somatic_sig = fields[COL_SOMATIC_SIGNIFICANCE].strip() if len(fields) > COL_SOMATIC_SIGNIFICANCE else "-"
+    onco_sig = fields[COL_ONCOGENICITY].strip() if len(fields) > COL_ONCOGENICITY else "-"
+
+    origins = {o.strip() for o in origin.split(";")} if origin else set()
+    has_germline = bool(origins & {"germline", "inherited", "de novo"})
+    has_somatic = "somatic" in origins
+
+    if has_somatic and not has_germline:
+        return "somatic"
+    if somatic_sig not in ("-", "", "na") and not has_germline:
+        return "somatic"
+    if onco_sig not in ("-", "", "na") and not has_germline:
+        return "oncogenicity"
+    return "germline"
 
 
 def create_schema(conn: sqlite3.Connection) -> None:
@@ -102,7 +129,7 @@ def import_clinvar(input_path: str, output_path: str) -> None:
     best: dict[str, tuple] = {}
     # Each value: (rsid, chromosome, position, ref_allele, alt_allele,
     #              clinical_significance, stars, conditions_json,
-    #              gene_symbol, last_evaluated)
+    #              gene_symbol, last_evaluated, classification_type)
 
     total_rows = 0
     skipped = 0
@@ -132,7 +159,7 @@ def import_clinvar(input_path: str, output_path: str) -> None:
 
             fields = line.rstrip("\n").split("\t")
 
-            # Ensure we have enough columns
+            # Ensure we have enough columns (minimum: up to review_status col 24)
             if len(fields) <= COL_REVIEW_STATUS:
                 skipped += 1
                 continue
@@ -165,13 +192,28 @@ def import_clinvar(input_path: str, output_path: str) -> None:
                 skipped += 1
                 continue
 
-            ref_allele = fields[COL_REF_ALLELE].strip()
-            alt_allele = fields[COL_ALT_ALLELE].strip()
-            # Normalise missing alleles
-            if ref_allele in ("na", "-", ""):
-                ref_allele = None
-            if alt_allele in ("na", "-", ""):
-                alt_allele = None
+            # Prefer VCF-style alleles (columns 32-33) which are populated
+            # for 99.999% of entries. Fall back to HGVS-style (columns 21-22)
+            # only if VCF columns are missing.
+            ref_allele = None
+            alt_allele = None
+            if len(fields) > COL_ALT_ALLELE_VCF:
+                ref_vcf = fields[COL_REF_ALLELE_VCF].strip()
+                alt_vcf = fields[COL_ALT_ALLELE_VCF].strip()
+                if ref_vcf not in ("na", "-", ""):
+                    ref_allele = ref_vcf
+                if alt_vcf not in ("na", "-", ""):
+                    alt_allele = alt_vcf
+
+            # Fallback to HGVS columns if VCF columns were empty
+            if ref_allele is None:
+                hgvs_ref = fields[COL_REF_ALLELE_HGVS].strip()
+                if hgvs_ref not in ("na", "-", ""):
+                    ref_allele = hgvs_ref
+            if alt_allele is None:
+                hgvs_alt = fields[COL_ALT_ALLELE_HGVS].strip()
+                if hgvs_alt not in ("na", "-", ""):
+                    alt_allele = hgvs_alt
 
             review_text = fields[COL_REVIEW_STATUS].strip()
             stars = review_status_to_stars(review_text)
@@ -179,6 +221,8 @@ def import_clinvar(input_path: str, output_path: str) -> None:
             conditions_json = parse_conditions(fields[COL_PHENOTYPE_LIST])
             gene_symbol = fields[COL_GENE_SYMBOL].strip() or None
             last_evaluated = fields[COL_LAST_EVALUATED].strip() or None
+
+            classification_type = determine_classification_type(fields)
 
             # Keep the row with the highest star rating per rsid
             if rsid in best:
@@ -198,6 +242,7 @@ def import_clinvar(input_path: str, output_path: str) -> None:
                 conditions_json,
                 gene_symbol,
                 last_evaluated,
+                classification_type,
             )
             kept += 1
 
@@ -236,10 +281,10 @@ def import_clinvar(input_path: str, output_path: str) -> None:
             """
             INSERT OR REPLACE INTO clinvar
                 (rsid, clinical_significance, review_status,
-                 conditions, gene_symbol, last_updated)
-            VALUES (?, ?, ?, ?, ?, ?)
+                 conditions, gene_symbol, last_updated, classification_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            [(r[0], r[5], r[6], r[7], r[8], r[9]) for r in batch],
+            [(r[0], r[5], r[6], r[7], r[8], r[9], r[10]) for r in batch],
         )
 
         if (i // BATCH_SIZE + 1) % 5 == 0 or i + BATCH_SIZE >= len(records):

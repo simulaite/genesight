@@ -83,56 +83,56 @@ VARIANTS = [
 # ============================================================
 
 CLINVAR_ENTRIES = [
-    # rsid, clinical_significance, review_status (stars), conditions (JSON), gene_symbol, last_updated
+    # rsid, clinical_significance, review_status (stars), conditions (JSON), gene_symbol, last_updated, classification_type
     (
         "rs28897696", "Pathogenic", 4,
         json.dumps(["Hereditary breast and ovarian cancer syndrome", "Breast neoplasm"]),
-        "BRCA1", "2024-06-15",
+        "BRCA1", "2024-06-15", "germline",
     ),
     (
         "rs80357906", "Pathogenic", 4,
         json.dumps(["Hereditary breast and ovarian cancer syndrome", "Ovarian neoplasm"]),
-        "BRCA1", "2024-06-15",
+        "BRCA1", "2024-06-15", "germline",
     ),
     (
         "rs80356862", "Pathogenic", 3,
         json.dumps(["Hereditary breast cancer", "Familial cancer of breast"]),
-        "BRCA2", "2024-05-20",
+        "BRCA2", "2024-05-20", "germline",
     ),
     (
         "rs75930367", "Pathogenic", 4,
         json.dumps(["Cystic fibrosis"]),
-        "CFTR", "2024-07-01",
+        "CFTR", "2024-07-01", "germline",
     ),
     (
         "rs121908769", "Pathogenic", 4,
         json.dumps(["Cystic fibrosis"]),
-        "CFTR", "2024-07-01",
+        "CFTR", "2024-07-01", "germline",
     ),
     (
         "rs334", "Pathogenic", 4,
         json.dumps(["Sickle cell disease", "Sickle cell trait"]),
-        "HBB", "2024-04-10",
+        "HBB", "2024-04-10", "germline",
     ),
     (
         "rs63750447", "Pathogenic", 3,
         json.dumps(["Alzheimer disease, familial, type 1"]),
-        "APP", "2024-03-20",
+        "APP", "2024-03-20", "germline",
     ),
     (
         "rs121909001", "Pathogenic", 3,
         json.dumps(["Tay-Sachs disease"]),
-        "HEXA", "2024-02-15",
+        "HEXA", "2024-02-15", "germline",
     ),
     (
         "rs1800553", "Pathogenic", 3,
         json.dumps(["Nonsyndromic hearing loss, autosomal recessive"]),
-        "GJB2", "2024-01-30",
+        "GJB2", "2024-01-30", "germline",
     ),
     (
         "rs11571833", "Pathogenic", 2,
         json.dumps(["Hereditary breast cancer", "Fanconi anemia"]),
-        "BRCA2", "2024-05-20",
+        "BRCA2", "2024-05-20", "germline",
     ),
 ]
 
@@ -619,6 +619,14 @@ def create_main_db(db_path: str) -> dict:
     cur.execute("INSERT INTO schema_version (version) VALUES (1)")
 
     cur.execute("""
+        CREATE TABLE IF NOT EXISTS db_metadata (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+    """)
+    cur.execute("INSERT INTO db_metadata (key, value) VALUES ('assembly', 'GRCh38')")
+
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS variants (
             rsid TEXT PRIMARY KEY,
             chromosome TEXT NOT NULL,
@@ -638,7 +646,8 @@ def create_main_db(db_path: str) -> dict:
             review_status INTEGER,
             conditions TEXT,
             gene_symbol TEXT,
-            last_updated DATE
+            last_updated DATE,
+            classification_type TEXT DEFAULT 'germline'
         )
     """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_clinvar_rsid ON clinvar(rsid)")
@@ -735,7 +744,7 @@ def create_main_db(db_path: str) -> dict:
 
     cur.executemany(
         "INSERT INTO clinvar (rsid, clinical_significance, review_status, conditions, "
-        "gene_symbol, last_updated) VALUES (?, ?, ?, ?, ?, ?)",
+        "gene_symbol, last_updated, classification_type) VALUES (?, ?, ?, ?, ?, ?, ?)",
         CLINVAR_ENTRIES,
     )
 
@@ -779,9 +788,9 @@ def create_main_db(db_path: str) -> dict:
 
     # Collect statistics
     stats = {}
-    for table in ["schema_version", "variants", "clinvar", "gwas", "frequencies",
-                   "pharmacogenomics", "pgx_allele_definitions", "pgx_diplotype_phenotypes",
-                   "pgx_drug_recommendations"]:
+    for table in ["schema_version", "db_metadata", "variants", "clinvar", "gwas",
+                   "frequencies", "pharmacogenomics", "pgx_allele_definitions",
+                   "pgx_diplotype_phenotypes", "pgx_drug_recommendations"]:
         count = cur.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]  # noqa: S608
         stats[table] = count
 
