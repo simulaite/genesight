@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::{AnnotatedVariant, ConfidenceTier};
+use super::{AnnotatedVariant, ConfidenceTier, GenomeAssembly};
 
 /// A scored result with confidence tier and human-readable summary.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -55,4 +55,10 @@ pub struct Report {
     pub attributions: Vec<String>,
     /// Medical disclaimer (mandatory)
     pub disclaimer: String,
+    /// Genome assembly detected from the input file
+    pub input_assembly: GenomeAssembly,
+    /// Genome assembly of the reference database
+    pub db_assembly: GenomeAssembly,
+    /// Warnings about assembly mismatches or unknown assemblies
+    pub assembly_warnings: Vec<String>,
 }

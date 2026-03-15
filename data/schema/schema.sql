@@ -14,6 +14,12 @@ CREATE TABLE IF NOT EXISTS schema_version (
 
 INSERT INTO schema_version (version) VALUES (1);
 
+-- Key-value metadata (assembly version, build date, etc.)
+CREATE TABLE IF NOT EXISTS db_metadata (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
 -- Core table: All known variants (reference data)
 CREATE TABLE IF NOT EXISTS variants (
     rsid TEXT PRIMARY KEY,              -- rs-number (e.g., "rs1234567")

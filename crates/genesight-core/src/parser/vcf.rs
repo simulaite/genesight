@@ -5,10 +5,40 @@
 //! into separate biallelic variants, and alleles are trimmed to their
 //! minimal representation via the [`normalizer`](crate::normalizer) module.
 
-use crate::models::{Genotype, SourceFormat, Variant};
+use crate::models::{GenomeAssembly, Genotype, SourceFormat, Variant};
 use crate::normalizer::{normalize_vcf_record, NormalizationStatus};
 
 use super::ParseError;
+
+/// Detect the genome assembly from VCF header lines.
+///
+/// Scans `##reference=` and `##contig=<...,assembly=...>` meta-information
+/// lines for assembly identifiers. VCF files commonly declare the reference
+/// genome in these headers.
+pub fn detect_assembly(content: &str) -> GenomeAssembly {
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if !trimmed.starts_with('#') {
+            // Past the header block
+            break;
+        }
+        // Check ##reference= lines
+        if trimmed.starts_with("##reference=") {
+            let assembly = GenomeAssembly::from_header_line(trimmed);
+            if assembly != GenomeAssembly::Unknown {
+                return assembly;
+            }
+        }
+        // Check ##contig= lines with assembly= attribute
+        if trimmed.starts_with("##contig=") {
+            let assembly = GenomeAssembly::from_header_line(trimmed);
+            if assembly != GenomeAssembly::Unknown {
+                return assembly;
+            }
+        }
+    }
+    GenomeAssembly::Unknown
+}
 
 /// Parse VCF content into variants.
 ///
@@ -181,6 +211,38 @@ mod tests {
     // -----------------------------------------------------------------------
     // Test 9: Existing VCF test fixture still parses correctly
     // -----------------------------------------------------------------------
+    #[test]
+    fn detect_assembly_from_reference() {
+        let content = "\
+##fileformat=VCFv4.1
+##reference=GRCh38
+#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE
+1\t82154\trs4477212\tG\tA\t.\tPASS\t.\tGT\t0/1
+";
+        assert_eq!(detect_assembly(content), GenomeAssembly::GRCh38);
+    }
+
+    #[test]
+    fn detect_assembly_from_contig_line() {
+        let content = "\
+##fileformat=VCFv4.1
+##contig=<ID=1,length=249250621,assembly=b37>
+#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE
+1\t82154\trs4477212\tG\tA\t.\tPASS\t.\tGT\t0/1
+";
+        assert_eq!(detect_assembly(content), GenomeAssembly::GRCh37);
+    }
+
+    #[test]
+    fn detect_assembly_unknown_when_no_reference() {
+        let content = "\
+##fileformat=VCFv4.1
+#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE
+1\t82154\trs4477212\tG\tA\t.\tPASS\t.\tGT\t0/1
+";
+        assert_eq!(detect_assembly(content), GenomeAssembly::Unknown);
+    }
+
     #[test]
     fn parse_basic_vcf() {
         let content = "\
