@@ -14,11 +14,11 @@ SNP is not a polygenic risk score. A PRS is a weighted aggregate across many var
 
 ## Scientific Requirement
 
-From the research report (Section: GWAS-Risikointerpretation):
+From the research report (Section: GWAS Risk Interpretation):
 
-> Standard-PRS ist ein gewichteter Summenscore: PRS = Σ(β_i * G_i), wobei G_i die Anzahl
-> Effektallele ist. Für interpretierbare Perzentile braucht man eine Referenzverteilung
-> (Mean/SD) im passenden Ancestry-Kollektiv.
+> Standard PRS is a weighted sum score: PRS = Σ(β_i * G_i), where G_i is the number
+> of effect alleles. For interpretable percentiles, a reference distribution
+> (Mean/SD) in the matching ancestry cohort is needed.
 
 Requirements for a proper PRS:
 1. Select validated weight set (betas) for a specific trait/disease

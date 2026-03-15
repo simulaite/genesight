@@ -59,13 +59,13 @@ research requirement.
 
 ## Scientific Requirement
 
-From the research report (Section: ClinVar-Pathogenität korrekt interpretieren):
+From the research report (Section: Correctly Interpreting ClinVar Pathogenicity):
 
-> **Hochvertrauen**: 3-4 Sterne (Expert Panel/Practice Guideline).
-> **Mittel**: 2 Sterne (mehrere Submitter, Kriterien, kein Konflikt).
-> **Niedrig/Informativ**: 1 Stern (Single submitter mit Kriterien) — anzeigen, aber
-> deutlich als nicht-konsentiert kennzeichnen.
-> **0 Sterne / no criteria**: nicht als klinische Aussage präsentieren; maximal als Rohhinweis.
+> **High confidence**: 3-4 stars (Expert Panel/Practice Guideline).
+> **Medium**: 2 stars (multiple submitters, criteria provided, no conflicts).
+> **Low/Informational**: 1 star (single submitter with criteria) — display, but
+> clearly label as non-consensus.
+> **0 stars / no criteria**: do not present as a clinical assertion; at most as a raw hint.
 
 ## Fix Requirements
 

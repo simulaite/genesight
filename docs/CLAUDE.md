@@ -1,83 +1,83 @@
-# GeneSight – Open-Source DNA-Analyse-Tool
+# GeneSight – Open-Source DNA Analysis Tool
 
-## Projekt-Identität
+## Project Identity
 
-**Name:** GeneSight (Arbeitstitel)
-**Sprache:** Deutsch & Englisch (Code und API auf Englisch, Dokumentation bilingual)
-**Lizenz:** GPL-3.0-or-later (kompatibel mit CC-BY-NC-SA 3.0 von SNPedia)
-**Ziel:** Ein Privacy-first CLI- und Desktop-Tool, das persönliche DNA-Rohdaten (23andMe, AncestryDNA, VCF) gegen öffentliche Genomdatenbanken annotiert und verständliche Reports generiert – ohne dass Daten jemals den Rechner des Nutzers verlassen.
+**Name:** GeneSight (working title)
+**Language:** German & English (code and API in English, documentation bilingual)
+**License:** GPL-3.0-or-later (compatible with CC-BY-NC-SA 3.0 from SNPedia)
+**Goal:** A privacy-first CLI and desktop tool that annotates personal DNA raw data (23andMe, AncestryDNA, VCF) against public genome databases and generates understandable reports — without data ever leaving the user's machine.
 
 ---
 
-## Architektur-Überblick
+## Architecture Overview
 
 ```
 genesight/
 ├── crates/
-│   ├── genesight-core/       # Library Crate: Parser, Annotator, Scorer, Report-Engine
+│   ├── genesight-core/       # Library Crate: Parser, Annotator, Scorer, Report Engine
 │   │   ├── src/
 │   │   │   ├── lib.rs
-│   │   │   ├── parser/       # DNA-Datei-Parser (23andMe, AncestryDNA, VCF)
+│   │   │   ├── parser/       # DNA file parsers (23andMe, AncestryDNA, VCF)
 │   │   │   │   ├── mod.rs
 │   │   │   │   ├── twentythreeandme.rs
 │   │   │   │   ├── ancestry.rs
 │   │   │   │   └── vcf.rs
-│   │   │   ├── db/           # Datenbank-Adapter (lokale SQLite)
+│   │   │   ├── db/           # Database adapters (local SQLite)
 │   │   │   │   ├── mod.rs
 │   │   │   │   ├── clinvar.rs
 │   │   │   │   ├── snpedia.rs
 │   │   │   │   ├── gwas.rs
 │   │   │   │   ├── dbsnp.rs
 │   │   │   │   └── pharmgkb.rs
-│   │   │   ├── annotator/    # Varianten-Annotation gegen Datenbanken
+│   │   │   ├── annotator/    # Variant annotation against databases
 │   │   │   │   ├── mod.rs
 │   │   │   │   ├── clinical.rs    # ClinVar pathogenicity
-│   │   │   │   ├── frequency.rs   # gnomAD/dbSNP Allelfrequenzen
+│   │   │   │   ├── frequency.rs   # gnomAD/dbSNP allele frequencies
 │   │   │   │   ├── pharmacogenomics.rs
 │   │   │   │   └── traits.rs      # SNPedia traits & magnitude
-│   │   │   ├── scorer/       # Risiko-Scoring & Confidence-Tiers
+│   │   │   ├── scorer/       # Risk scoring & confidence tiers
 │   │   │   │   ├── mod.rs
-│   │   │   │   ├── monogenic.rs   # Einzelgen-Erkrankungen (Tier 1: >95%)
-│   │   │   │   ├── pharmaco.rs    # Pharmakogenetik (Tier 1: >95%)
-│   │   │   │   ├── polygenic.rs   # Polygene Risikoscores (Tier 2: 60-85%)
-│   │   │   │   └── traits.rs      # Merkmale & Lifestyle (Tier 2-3)
-│   │   │   ├── report/       # Report-Generierung
+│   │   │   │   ├── monogenic.rs   # Single-gene disorders (Tier 1: >95%)
+│   │   │   │   ├── pharmaco.rs    # Pharmacogenetics (Tier 1: >95%)
+│   │   │   │   ├── polygenic.rs   # Polygenic risk scores (Tier 2: 60-85%)
+│   │   │   │   └── traits.rs      # Traits & lifestyle (Tier 2-3)
+│   │   │   ├── report/       # Report generation
 │   │   │   │   ├── mod.rs
 │   │   │   │   ├── markdown.rs
 │   │   │   │   ├── json.rs
 │   │   │   │   └── html.rs
-│   │   │   └── models/       # Shared Types & Structs
+│   │   │   └── models/       # Shared types & structs
 │   │   │       ├── mod.rs
 │   │   │       ├── variant.rs
 │   │   │       ├── annotation.rs
 │   │   │       ├── confidence.rs  # ConfidenceTier enum
 │   │   │       └── report.rs
 │   │   └── Cargo.toml
-│   ├── genesight-cli/        # CLI-Tool (clap)
+│   ├── genesight-cli/        # CLI tool (clap)
 │   │   ├── src/
 │   │   │   └── main.rs
 │   │   └── Cargo.toml
-│   ├── genesight-server/     # Axum API (optional, für Web-Version)
+│   ├── genesight-server/     # Axum API (optional, for web version)
 │   │   ├── src/
 │   │   │   └── main.rs
 │   │   └── Cargo.toml
 │   └── genesight-desktop/    # Tauri App (Phase 2)
 │       └── ...
 ├── data/
-│   ├── fetch/                # Scripts zum Herunterladen der Datenbanken
+│   ├── fetch/                # Scripts for downloading the databases
 │   │   ├── fetch_clinvar.sh
 │   │   ├── fetch_snpedia.py
 │   │   ├── fetch_gwas.sh
 │   │   ├── fetch_dbsnp.sh
 │   │   └── fetch_pharmgkb.sh
-│   ├── import/               # Scripts zum Importieren in SQLite
-│   │   ├── import_clinvar.rs (oder .py)
+│   ├── import/               # Scripts for importing into SQLite
+│   │   ├── import_clinvar.rs (or .py)
 │   │   ├── import_snpedia.rs
 │   │   └── import_gwas.rs
-│   └── schema/               # SQLite Schema-Definitionen
+│   └── schema/               # SQLite schema definitions
 │       └── schema.sql
 ├── tests/
-│   ├── fixtures/             # Test-DNA-Dateien (synthetisch!)
+│   ├── fixtures/             # Test DNA files (synthetic!)
 │   │   ├── sample_23andme.txt
 │   │   ├── sample_ancestry.txt
 │   │   └── sample.vcf
@@ -89,43 +89,43 @@ genesight/
 │   ├── CONFIDENCE_TIERS.md
 │   └── CONTRIBUTING.md
 ├── Cargo.toml               # Workspace
-├── CLAUDE.md                 # Diese Datei (Claude Code Kontext)
+├── CLAUDE.md                 # This file (Claude Code context)
 ├── LICENSE                   # GPL-3.0
 └── README.md
 ```
 
 ---
 
-## Datenquellen & Lizenzen
+## Data Sources & Licenses
 
-### Primäre Datenbanken
+### Primary Databases
 
-| Datenbank | Inhalt | Lizenz | Zugang | Größe (ca.) |
-|-----------|--------|--------|--------|-------------|
-| **ClinVar** | Klinisch klassifizierte Varianten (pathogenic/benign), >3M Varianten | Public Domain (US Gov) | FTP: `ftp.ncbi.nlm.nih.gov/pub/clinvar/` + REST API | ~100MB (TSV) |
-| **SNPedia** | Wiki mit ~112K SNPs, Magnitude-Scores, menschenlesbare Zusammenfassungen | CC-BY-NC-SA 3.0 | MediaWiki API: `snpedia.com/w/api.php` | ~160MB (SQLite dump) |
-| **GWAS Catalog** | Genom-weite Assoziationsstudien, polygene Traits | Open Access (EMBL-EBI) | REST API v2: `ebi.ac.uk/gwas/rest/api/v2/` + FTP | ~50MB |
-| **dbSNP** | Referenz-SNP-Datenbank (rs-Nummern, Allelfrequenzen) | Public Domain (US Gov) | FTP: `ftp.ncbi.nih.gov/snp/` | ~15GB (vollständig), Subset ~500MB |
-| **gnomAD** | Allelfrequenzen aus >250K Genomen | Open Access | Download: `gnomad.broadinstitute.org` | Multi-GB, Subset ~1GB |
-| **PharmGKB** | Pharmakogenetik (Medikamenten-Gen-Interaktionen) | CC-BY-SA 4.0 (akademisch frei) | Download + API: `pharmgkb.org` | ~50MB |
+| Database | Content | License | Access | Size (approx.) |
+|----------|---------|---------|--------|-----------------|
+| **ClinVar** | Clinically classified variants (pathogenic/benign), >3M variants | Public Domain (US Gov) | FTP: `ftp.ncbi.nlm.nih.gov/pub/clinvar/` + REST API | ~100MB (TSV) |
+| **SNPedia** | Wiki with ~112K SNPs, magnitude scores, human-readable summaries | CC-BY-NC-SA 3.0 | MediaWiki API: `snpedia.com/w/api.php` | ~160MB (SQLite dump) |
+| **GWAS Catalog** | Genome-wide association studies, polygenic traits | Open Access (EMBL-EBI) | REST API v2: `ebi.ac.uk/gwas/rest/api/v2/` + FTP | ~50MB |
+| **dbSNP** | Reference SNP database (rs numbers, allele frequencies) | Public Domain (US Gov) | FTP: `ftp.ncbi.nih.gov/snp/` | ~15GB (complete), subset ~500MB |
+| **gnomAD** | Allele frequencies from >250K genomes | Open Access | Download: `gnomad.broadinstitute.org` | Multi-GB, subset ~1GB |
+| **PharmGKB** | Pharmacogenetics (drug-gene interactions) | CC-BY-SA 4.0 (academically free) | Download + API: `pharmgkb.org` | ~50MB |
 
-### Lizenz-Kompatibilität
+### License Compatibility
 
-- **GPL-3.0** (unser Projekt) ist kompatibel mit:
+- **GPL-3.0** (our project) is compatible with:
   - Public Domain (ClinVar, dbSNP) ✅
-  - CC-BY-NC-SA 3.0 (SNPedia) ✅ — solange wir nicht-kommerziell bleiben oder SNPedia-Daten als separaten, optional herunterladbaren Datensatz behandeln
+  - CC-BY-NC-SA 3.0 (SNPedia) ✅ — as long as we remain non-commercial or treat SNPedia data as a separate, optionally downloadable dataset
   - CC-BY-SA 4.0 (PharmGKB) ✅
   - Open Access (GWAS Catalog, gnomAD) ✅
 
-- **Wichtig:** CC-BY-NC-SA 3.0 von SNPedia bedeutet:
-  - ✅ Open-Source-Projekt: kein Problem
-  - ✅ Persönliche/akademische Nutzung: kein Problem
-  - ⚠️ Falls jemand das Projekt kommerziell forken will: SNPedia-Daten müssen entfernt oder separat lizenziert werden
-  - → **Lösung:** SNPedia-Daten als optionalen Download behandeln, nicht im Repo bündeln
+- **Important:** CC-BY-NC-SA 3.0 from SNPedia means:
+  - ✅ Open-source project: no problem
+  - ✅ Personal/academic use: no problem
+  - ⚠️ If someone wants to commercially fork the project: SNPedia data must be removed or separately licensed
+  - → **Solution:** Treat SNPedia data as an optional download, not bundled in the repo
 
-### Attributions-Pflichten
+### Attribution Requirements
 
-Jede Nutzung muss korrekt attribuieren:
+Every use must correctly attribute:
 - ClinVar: "ClinVar data provided by NCBI (National Center for Biotechnology Information)"
 - SNPedia: "SNPedia content is licensed under CC-BY-NC-SA 3.0 by SNPedia.com"
 - GWAS Catalog: "GWAS Catalog provided by NHGRI-EBI"
@@ -133,33 +133,33 @@ Jede Nutzung muss korrekt attribuieren:
 
 ---
 
-## Confidence-Tier-System
+## Confidence Tier System
 
-Alle Ergebnisse werden in drei Zuverlässigkeitsstufen eingeteilt:
+All results are categorized into three reliability levels:
 
-### Tier 1: Zuverlässig (>95% Genauigkeit)
-- **Monogenetische Erkrankungen** — Einzelne Variante ist direkt kausal (z.B. BRCA1/2, CFTR, Huntington)
-- **Carrier Status** — Trägerstatus für rezessive Erkrankungen
-- **Pharmakogenetik** — Medikamenten-Metabolismus (CYP2D6, CYP2C19, etc.)
-- **Einfache Merkmale** — Laktosetoleranz, Ohrenschmalz-Typ, etc.
-- Quelle: Primär ClinVar (review status ≥ 2 Sterne), PharmGKB (Level 1-2)
+### Tier 1: Reliable (>95% Accuracy)
+- **Monogenic Disorders** — A single variant is directly causal (e.g., BRCA1/2, CFTR, Huntington)
+- **Carrier Status** — Carrier status for recessive disorders
+- **Pharmacogenetics** — Drug metabolism (CYP2D6, CYP2C19, etc.)
+- **Simple Traits** — Lactose tolerance, earwax type, etc.
+- Source: Primarily ClinVar (review status ≥ 2 stars), PharmGKB (Level 1-2)
 
-### Tier 2: Wahrscheinlich (60-85% Genauigkeit)
-- **Polygene Risikoscores** — Diabetes, Herzkrankheiten, Bluthochdruck
-- **Körperliche Merkmale** — Haarfarbe, Sommersprossen, Glatzenrisiko
-- Quelle: GWAS Catalog, SNPedia (Magnitude ≥ 3)
+### Tier 2: Probable (60-85% Accuracy)
+- **Polygenic Risk Scores** — Diabetes, heart disease, hypertension
+- **Physical Traits** — Hair color, freckles, baldness risk
+- Source: GWAS Catalog, SNPedia (Magnitude ≥ 3)
 
-### Tier 3: Spekulativ (50-65% Genauigkeit)
-- **Komplexe Erkrankungen** — Depression, Schizophrenie, Autismus
-- **Persönlichkeitsmerkmale** — Intelligenz, Risikobereitschaft
-- **Sportliche Eignung** — ACTN3, VO2max-Prädisposition
-- Quelle: GWAS Catalog (niedrige Effektstärke), SNPedia (Magnitude < 3)
+### Tier 3: Speculative (50-65% Accuracy)
+- **Complex Disorders** — Depression, schizophrenia, autism
+- **Personality Traits** — Intelligence, risk-taking propensity
+- **Athletic Aptitude** — ACTN3, VO2max predisposition
+- Source: GWAS Catalog (low effect size), SNPedia (Magnitude < 3)
 
-**Regel:** Jedes Ergebnis MUSS ein `ConfidenceTier` zugewiesen bekommen. Der Report zeigt dies prominent an.
+**Rule:** Every result MUST be assigned a `ConfidenceTier`. The report displays this prominently.
 
 ---
 
-## Unterstützte Eingabeformate
+## Supported Input Formats
 
 ### 23andMe Raw Data
 ```
@@ -167,105 +167,105 @@ Alle Ergebnisse werden in drei Zuverlässigkeitsstufen eingeteilt:
 rs4477212  1  82154  AA
 rs3094315  1  752566  AG
 ```
-- Tab-separated, Kommentarzeilen beginnen mit `#`
-- Header-Zeile: `rsid  chromosome  position  genotype`
-- Genotyp: 2 Buchstaben (z.B. AA, AG, CT), `--` für nicht-aufgerufen, `I` oder `D` für Indels
+- Tab-separated, comment lines start with `#`
+- Header line: `rsid  chromosome  position  genotype`
+- Genotype: 2 characters (e.g., AA, AG, CT), `--` for no-call, `I` or `D` for indels
 
 ### AncestryDNA Raw Data
 ```
 rsid  chromosome  position  allele1  allele2
 rs4477212  1  82154  A  A
 ```
-- Tab-separated, Kommentarzeilen beginnen mit `#`
-- Allele sind getrennt in zwei Spalten
+- Tab-separated, comment lines start with `#`
+- Alleles are separated into two columns
 
 ### VCF (Variant Call Format)
 ```
 #CHROM  POS  ID  REF  ALT  QUAL  FILTER  INFO  FORMAT  SAMPLE
 1  82154  rs4477212  G  A  .  PASS  .  GT  0/1
 ```
-- Standard-Bioinformatik-Format
-- Komplexer zu parsen, aber am vollständigsten
+- Standard bioinformatics format
+- More complex to parse, but most comprehensive
 
 ---
 
-## Entwicklungs-Phasen
+## Development Phases
 
-### Phase 1: Daten & CLI (AKTUELL)
-1. **Daten-Fetching-Scripts** — Alle Datenbanken herunterladen
-2. **SQLite-Import** — Daten in lokale, abfragbare Datenbank importieren
-3. **DNA-Parser** — 23andMe, AncestryDNA, VCF Dateien einlesen
-4. **Annotation-Engine** — Varianten gegen lokale DB matchen
-5. **CLI-Tool** — `genesight analyze my_dna.txt --format markdown`
-6. **Report-Generator** — Markdown/JSON/HTML Output mit Confidence-Tiers
+### Phase 1: Data & CLI (CURRENT)
+1. **Data Fetching Scripts** — Download all databases
+2. **SQLite Import** — Import data into local, queryable database
+3. **DNA Parsers** — Read 23andMe, AncestryDNA, VCF files
+4. **Annotation Engine** — Match variants against local DB
+5. **CLI Tool** — `genesight analyze my_dna.txt --format markdown`
+6. **Report Generator** — Markdown/JSON/HTML output with confidence tiers
 
 ### Phase 2: Desktop App
-7. **Tauri-Integration** — GUI um den Core
-8. **Auto-Update** — Datenbank-Updates im Hintergrund
-9. **LLM-Integration** — Optional: Ergebnisse per LLM verständlich zusammenfassen
+7. **Tauri Integration** — GUI around the core
+8. **Auto-Update** — Database updates in the background
+9. **LLM Integration** — Optional: Summarize results in plain language via LLM
 
 ### Phase 3: Web & Community
-10. **Axum API** — Für Web-Version (mit explizitem Privacy-Disclaimer)
-11. **Community-Reports** — Anonymisierte, aggregierte Statistiken
+10. **Axum API** — For web version (with explicit privacy disclaimer)
+11. **Community Reports** — Anonymized, aggregated statistics
 
 ---
 
-## Coding-Konventionen
+## Coding Conventions
 
 ### Rust
 - **Edition:** 2021
 - **MSRV:** 1.75+
-- **Error Handling:** `thiserror` für Library-Errors, `anyhow` für CLI/App
-- **Async:** `tokio` (für Daten-Fetching und Server), sync für Core-Logik
+- **Error Handling:** `thiserror` for library errors, `anyhow` for CLI/App
+- **Async:** `tokio` (for data fetching and server), sync for core logic
 - **Serialization:** `serde` + `serde_json`
 - **CLI:** `clap` v4 (derive API)
-- **Database:** `rusqlite` (mit bundled SQLite)
-- **HTTP Client:** `reqwest` (für Daten-Fetching)
-- **Testing:** Unit-Tests in jedem Modul, Integration-Tests in `tests/`
+- **Database:** `rusqlite` (with bundled SQLite)
+- **HTTP Client:** `reqwest` (for data fetching)
+- **Testing:** Unit tests in every module, integration tests in `tests/`
 
-### Code-Stil
-- `cargo fmt` und `cargo clippy` müssen sauber durchlaufen
-- Alle öffentlichen Funktionen haben Doc-Comments
-- Keine `unwrap()` in Library-Code — nur in Tests und CLI mit Kontext
-- Englische Variablen- und Funktionsnamen
-- Deutsche Kommentare sind OK, Doc-Comments auf Englisch
+### Code Style
+- `cargo fmt` and `cargo clippy` must pass cleanly
+- All public functions have doc comments
+- No `unwrap()` in library code — only in tests and CLI with context
+- English variable and function names
+- German comments are OK, doc comments in English
 
 ### Git
 - Conventional Commits: `feat:`, `fix:`, `docs:`, `data:`, `refactor:`
-- Branch-Schema: `feat/parser-23andme`, `data/clinvar-import`
-- Keine DNA-Rohdaten im Repo — nur synthetische Testdaten
+- Branch scheme: `feat/parser-23andme`, `data/clinvar-import`
+- No raw DNA data in the repo — only synthetic test data
 
 ---
 
-## Wichtige Regeln
+## Important Rules
 
-1. **Keine echten DNA-Daten im Repository.** Testdaten müssen synthetisch generiert werden.
-2. **Keine medizinischen Diagnosen.** Der Report ist informativ, nicht diagnostisch. Jeder Report enthält einen Disclaimer.
-3. **Privacy first.** Keine Telemetrie, keine Daten-Uploads, keine Analytics. Alles lokal.
-4. **Confidence-Tiers sind Pflicht.** Kein Ergebnis ohne zugewiesene Zuverlässigkeitsstufe.
-5. **Attributions sind Pflicht.** Jede Datenquelle muss im Report korrekt attribuiert werden.
-6. **Offline-fähig.** Nach initialem Datenbank-Download muss das Tool komplett offline funktionieren.
+1. **No real DNA data in the repository.** Test data must be synthetically generated.
+2. **No medical diagnoses.** The report is informational, not diagnostic. Every report contains a disclaimer.
+3. **Privacy first.** No telemetry, no data uploads, no analytics. Everything local.
+4. **Confidence tiers are mandatory.** No result without an assigned reliability level.
+5. **Attributions are mandatory.** Every data source must be correctly attributed in the report.
+6. **Offline-capable.** After the initial database download, the tool must function completely offline.
 
 ---
 
-## Aktueller Fokus: Phase 1 – Daten holen & CLI
+## Current Focus: Phase 1 – Fetch Data & CLI
 
-### Aufgabe 1: Daten-Fetching-Scripts erstellen
-- `data/fetch/fetch_clinvar.sh` — ClinVar VCF + variant_summary.txt von NCBI FTP
-- `data/fetch/fetch_snpedia.py` — SNPedia via MediaWiki API scrapen (respektiere Rate Limits: 3s Delay)
-- `data/fetch/fetch_gwas.sh` — GWAS Catalog TSV-Download
-- `data/fetch/fetch_dbsnp.sh` — dbSNP relevante Subset-Daten
+### Task 1: Create Data Fetching Scripts
+- `data/fetch/fetch_clinvar.sh` — ClinVar VCF + variant_summary.txt from NCBI FTP
+- `data/fetch/fetch_snpedia.py` — Scrape SNPedia via MediaWiki API (respect rate limits: 3s delay)
+- `data/fetch/fetch_gwas.sh` — GWAS Catalog TSV download
+- `data/fetch/fetch_dbsnp.sh` — dbSNP relevant subset data
 
-### Aufgabe 2: SQLite-Schema & Import
-- Einheitliches Schema in `data/schema/schema.sql`
-- Import-Scripts die heruntergeladene Daten in SQLite transformieren
-- Ziel: Eine einzelne `genesight.db` Datei (~500MB-1GB)
+### Task 2: SQLite Schema & Import
+- Unified schema in `data/schema/schema.sql`
+- Import scripts that transform downloaded data into SQLite
+- Goal: A single `genesight.db` file (~500MB-1GB)
 
-### Aufgabe 3: DNA-Parser
-- `genesight-core` Parser für 23andMe, AncestryDNA, VCF
-- Ergebnis: `Vec<Variant>` mit rsID, Chromosom, Position, Genotyp
+### Task 3: DNA Parsers
+- `genesight-core` parsers for 23andMe, AncestryDNA, VCF
+- Result: `Vec<Variant>` with rsID, chromosome, position, genotype
 
-### Aufgabe 4: Annotation & CLI
-- Lookup jeder Variante gegen die lokale SQLite
-- CLI-Interface: `genesight analyze <file> [--format json|md|html] [--tier 1|2|3]`
-- Report-Output mit Confidence-Tiers
+### Task 4: Annotation & CLI
+- Lookup each variant against the local SQLite
+- CLI interface: `genesight analyze <file> [--format json|md|html] [--tier 1|2|3]`
+- Report output with confidence tiers

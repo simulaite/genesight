@@ -16,12 +16,12 @@ may have been swapped, meaning the user might see the wrong allele flagged.
 
 ## Scientific Requirement
 
-From the research report (Section: GWAS-Risikointerpretation):
+From the research report (Section: GWAS Risk Interpretation):
 
-> Für vor Jan 2021 kuratierte Studien wurde OR<1 teils invertiert und das berichtete
-> Allel entsprechend gedreht, damit die gespeicherten ORs >1 sind.
+> For studies curated before Jan 2021, OR<1 was sometimes inverted and the reported
+> allele correspondingly flipped, so that stored ORs are >1.
 
-> OR aus Top-Hits ohne Beachtung der historischen Inversion/Allelswap interpretieren.
+> Interpreting OR from top hits without considering the historical inversion/allele swap.
 
 ## Fix Requirements
 

@@ -409,397 +409,397 @@ The structural blueprint of CPIC's official PharmCAT tool provides the optimal d
 By abandoning the simplistic rsID lookup model and embracing this modular, deterministically normalized architecture, a consumer-genomics tool can elevate its accuracy to match institutional clinical software, ensuring patient safety and scientific validity.
 knowledge.illumina.com
 DNA strand designations - Illumina Knowledge
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 knowledge.illumina.com
 How to interpret DNA strand and allele information for Infinium genotyping array data
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Strategies for processing and quality control of Illumina genotyping arrays - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Misannotation of multiple-nucleotide variants risks misdiagnosis - PMC - NIH
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 customercare.23andme.com
 Which Reference Genome and Strand Does 23andMe Use?
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 github.com
 Determines genome stranding for sequences mapped to a human reference assembly - GitHub
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 mr-dictionary.mrcieu.ac.uk
 Palindromic single nucleotide polymorphism (SNP) - Mendelian randomization dictionary
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 mrcieu.github.io
 Harmonise data • TwoSampleMR
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 vrs.ga4gh.org
 Normalization — GA4GH Variation Representation Specification ...
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 github.com
 HLA_analyses_tutorial/tutorial_HLAQCImputation.ipynb at main - GitHub
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Challenges imposed by minor reference alleles on the identification and reporting of clinical variants from exome data - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 researchgate.net
 False Alarms in Consumer Genomics Add to Public Fear and Potential Health Care Burden
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 mdpi.com
 False Alarms in Consumer Genomics Add to Public Fear and Potential Health Care Burden
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 wanggroup.org
 Allele flip when merging genotype data - wanggroup.org
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Pharmacogenomics Clinical Annotation Tool (PharmCAT) - PMC - NIH
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 An efficient genotyper and star-allele caller for pharmacogenomics - PMC - NIH
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 biorxiv.org
 Aldy 4: An efficient genotyper and star-allele caller for pharmacogenomics - bioRxiv.org
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 PharmVar GeneFocus: CYP2C19 - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 files.cpicpgx.org
 CYP2C19 allele definition table
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 ncbi.nlm.nih.gov
 Table 2. [The CPIC Assignment of CYP2C19 Phenotype based on Genotype (2017)]. - Medical Genetics Summaries - NCBI
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 github.com
 PharmGKB/PharmCAT: The Pharmacogenomic Clinical ... - GitHub
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 cpicpgx.org
 PharmCAT - CPIC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 files.cpicpgx.org
 CYP2D6 allele definition table
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 files.cpicpgx.org
 Alleles - CPIC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 cpicpgx.org
 CPIC® Guideline for Tricyclic Antidepressants and CYP2D6 and CYP2C19
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 files.cpicpgx.org
 CYP2C19 diplotype-phenotype table
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 How to Run the Pharmacogenomics Clinical Annotation Tool (PharmCAT) - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pharmcat.clinpgx.org
 FAQs | PharmCAT
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 illumina.com
 A starring role for pharmacogenomics: Development and verification of “star allele” calling for 20 critical PGx genes using the DRAGEN Bio-IT platform - Illumina
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 A systematic comparison of pharmacogene star allele calling bioinformatics algorithms: a focus on CYP2D6 genotyping - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 cpicpgx.org
 CYP2C19 CPIC guidelines
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 clinpgx.org
 Annotation of CPIC Guideline for dexlansoprazole and CYP2C19 - ClinPGx
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pharmvar.org
 Genes - PharmVar
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pharmvar.org
 Allele Designation Criteria and Evidence Levels - PharmVar
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 clinpgx.org
 Gene-specific Information Tables for CYP2D6 - ClinPGx
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 clinpgx.org
 Gene-specific Information Tables for CYP2C19 - ClinPGx
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 lifebit.ai
 Clinical Variant Interpretation: 5 Easy Tiers - Lifebit
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Standards and Guidelines for the Interpretation of Sequence Variants: A Joint Consensus Recommendation of the American College of Medical Genetics and Genomics and the Association for Molecular Pathology - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 medrxiv.org
 ClinVar and HGMD genomic variant classification accuracy has improved over time, as measured by implied disease burden - medRxiv.org
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 jmg.bmj.com
 Variant reclassification and clinical implications - Journal of Medical Genetics
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Generating Clinical-Grade Gene–Disease Validity Classifications Through the ClinGen Data Platforms - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 blog.opentargets.org
 Introducing ClinGen's Gene Validity Curations - The Open Targets Blog
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 annualreviews.org
 Generating Clinical-Grade Gene–Disease Validity Classifications Through the ClinGen Data Platforms - Annual Reviews
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 wfneurology.org
 The Online Mendelian Inheritance in Man (OMIM) Database [World Neurology 39:1 Editor's Choice]
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 worldneurologyonline.com
 The Online Mendelian Inheritance in Man (OMIM) Database
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pubmed.ncbi.nlm.nih.gov
 OMIM.org: leveraging knowledge across phenotype-gene relationships - PubMed
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 ncbi.nlm.nih.gov
 MedGen Overview - NCBI - NIH
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 An optimized variant prioritization process for rare disease diagnostics: recommendations for Exomiser and Genomiser - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 researchgate.net
 An optimized variant prioritization process for rare disease diagnostics: recommendations for Exomiser and Genomiser - ResearchGate
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Quantifying the Underestimation of Relative Risks from Genome-Wide Association Studies
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 stanford.edu
 Analyzing GWAS Data
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 A guide to performing Polygenic Risk Score analyses - PMC - NIH
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 biorxiv.org
 Reconstructing SNP Allele and Genotype Frequencies from GWAS Summary Statistics - bioRxiv.org
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 biorxiv.org
 A community driven GWAS summary statistics standard | bioRxiv
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 mv.helsinki.fi
 GWAS 2: P-values in GWAS
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 docs.finngen.fi
 P Values | FinnGen Handbook
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 The (in)famous GWAS P-value threshold revisited and updated for low-frequency variants
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Updated Recommendation for the Benign Stand Alone ACMG/AMP Criterion - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 medrxiv.org
 Automating ACMG Variant Classifications With BIAS-2015 v2.0.0: Algorithm Analysis and Benchmark Against the FDA-Approved eRepo Dataset | medRxiv
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Overview of specifications to the ACMG/AMP variant interpretation guidelines - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 help.genoox.com
 Frequency rules - PM2, BS1, BS2, BA1 | Franklin Help Center
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 fda.gov
 Direct-to-Consumer Tests - FDA
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 cpicpgx.org
 FDA and pharmacogenomics - CPIC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 fda.gov
 FDA authorizes first direct-to-consumer test for detecting genetic variants that may be associated with medication metabolism
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 eur-lex.europa.eu
 REGULATION (EU) 2017/ 746 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL - of 5 April 2017 - on in vitro dia
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 health.ec.europa.eu
 Guidance on Qualification and Classification of Software in Regulation (EU) 2017/745 - Language selection | Public Health
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 arenasolutions.com
 IVDR 2017/746 Compliance Definition - Arena
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 euformatics.com
 A Practical Guide to Clinical Variant Interpretation - Euformatics
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 ACMG Recommendations for Reporting of Incidental Findings in Clinical Exome and Genome Sequencing - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 genomes2people.org
 Reporting Genomic Sequencing Results to Ordering Clinicians Incidental, but Not Exceptional | Genomes2People
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 myreproductivehealth.org
 Genetic Testing Resources for Physicians | MyReproductiveHealth.org
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 ga4gh.org
 a standard way of exchanging genetic variation data with precision and consistency - GA4GH
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 The GA4GH Variation Representation Specification: A computational framework for variation representation and federated identification - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 ga4gh.org
 Genetic Variation Formats (VCF) – GA4GH
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 github.com
 Releases · PharmGKB/PharmCAT - GitHub
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 github.com
 Star allele and CPIC guidlines · Issue #81 · sigven/pcgr - GitHub
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 academic.oup.com
 ClinVar: updates to support classifications of both germline and somatic variants | Nucleic Acids Research | Oxford Academic
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 cureffi.org
 The difference between odds ratio and risk ratio - CureFFI.org
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 fda.gov
 Pharmacogenetic Tests and Genetic Tests for Heritable Markers | FDA
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Ready or not, here it comes: Direct-to-consumer pharmacogenomic testing and its implications for community pharmacists - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 ga4gh.org
 Scaling VCF for a genomic revolution – GA4GH
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Genotype harmonizer: automatic strand alignment and format conversion for genotype data integration - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Strand asymmetry influences mismatch resolution during a single-strand annealing - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 youtube.com
 Overview of OMIM - YouTube
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 On reporting and interpreting statistical significance and p values in medical research - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 cpicpgx.org
 CPIC Guideline for CYP2C19 and Clopidogrel - ClinPGx
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 cpicpgx.org
 CPIC Update
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 youtube.com
 ClinGen Gene Disease Clinical Validity framework: Case level evidence scoring, Part 1
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 csg.sph.umich.edu
 Tutorial | GAS Power Calculator - Center for Statistical Genetics
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Sample Size Calculation in Genetic Association Studies: A Practical Approach - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 genomes2people.org
 DECODING FDA DTC POLICY - Genomes2People
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 The Future of DTC Genomics and the Law - PMC - NIH
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pharmcat.clinpgx.org
 Gene Definition Exceptions | PharmCAT
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 cpicpgx.org
 CPIC Guidelines - ClinPGx
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Prediction of individual genetic risk to disease from genome-wide association studies - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 mdpi.com
 Sample Size Calculation in Genetic Association Studies: A Practical Approach - MDPI
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Sample Size and Statistical Power Calculation in Genetic Association Studies - PMC - NIH
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 eur-lex.europa.eu
 2017/746 - EN - Medical Device Regulation - EUR-Lex - European Union
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 openscholarship.wustl.edu
 DIRECT-TO-CONSUMER GENETIC TESTING: EMPOWERING EU CONSUMERS AND GIVING MEANING TO THE INFORMED CONSENT PROCESS WITHIN THE IVDR A
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Frequencies of pharmacogenomic alleles across biogeographic groups in a large-scale biobank - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 cpicpgx.org
 Change Log - CPIC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 youtube.com
 Gene Disease Validity Classifications Tutorial - YouTube
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 acmg.net
 ACMG Documents in Development
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Best practices for the interpretation and reporting of clinical whole genome sequencing
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Settling the score: variant prioritization and Mendelian disease - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Standards and Guidelines for the Interpretation and Reporting of Sequence Variants in Cancer - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Structure and content of the EU-IVDR: Current status and implications for pathology - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Regulation (EU) 2017/746 (IVDR): practical implementation of annex I in pathology - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 criterionedge.com
 Software Can Be An In Vitro Diagnostic Device Under IVDR 2017/746 - Criterion Edge
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pharmgkb.org
 Guideline - ClinPGx
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 support.researchallofus.org
 All of Us Pharmacogenomics (Star Allele) Calling - User Support
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 researchgate.net
 Generating Clinical-Grade Gene-Disease Validity Classifications Through the ClinGen Data Platforms | Request PDF - ResearchGate
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pharmgkb.org
 Pharmacogene Tables - ClinPGx
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 github.com
 type-graphql/docs/inheritance.md at master - GitHub
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 docs.gdc.cancer.gov
 GraphQL Examples - GDC Docs
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 ambrygen.com
 Gene-specific allele frequency thresholds for benign evidence to empower variant interpretation - Scientific Presentation | Ambry Genetics
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Comparing preferences for return of genome sequencing results assessed with rating and ranking items - NIH
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Patient safety in genomic medicine: an exploratory study - PMC - NIH
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pharmvar.org
 PharmVar
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 frontiersin.org
 PAnno: A pharmacogenomics annotation tool for clinical genomic testing - Frontiers
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 researchgate.net
 Genome annotation for clinical genomic diagnostics: Strengths and weaknesses
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 nthrys.com
 Workshop in Risk Assessment in Genome Annotation Projects - NTHRYS
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Leveraging human genetics to identify safety signals prior to drug marketing approval and clinical use - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Genome annotation for clinical genomic diagnostics: strengths and weaknesses - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 acmg.net
 Evidence-Based Clinical Practice Guidelines - ACMG.net
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 acmg.net
 Practice Guidelines - ACMG.net
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 genome.ucsc.edu
 ClinGen curation activities (Dosage Sensitivity and Gene-Disease Validity) - UCSC Genome Browser
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 pmc.ncbi.nlm.nih.gov
 Beyond gene-disease validity: capturing structured data on inheritance, allelic requirement, disease-relevant variant classes, and disease mechanism for inherited cardiac conditions - PMC
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 youtube.com
 ClinGen Gene Disease Clinical Validity curation summaries - YouTube
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 researchgate.net
 Evaluating the clinical validity of genes related to hemostasis and thrombosis using the ClinGen gene curation framework - ResearchGate
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 youtube.com
 Gene Disease Validity Scoring Overview Tutorial - YouTube
-Wird in einem neuen Fenster geöffnet
+Opens in a new window
 Standardizing Genomic Data Alignment
 I am initiating a deep synthesis of the scientific protocols needed to correctly align personal genetic data with global reference standards. I have determined that a critical first step involves normalizing the differing strand orientations used by various genotyping arrays. Without a rigorous normalization process to align these formats to a common reference strand, any subsequent clinical interpretation is fundamentally unreliable.
 Resolving Interpretation Discrepancies

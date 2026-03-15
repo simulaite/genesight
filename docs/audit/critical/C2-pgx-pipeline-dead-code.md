@@ -61,15 +61,15 @@ Neither of these calls any function from `pgx/diplotype.rs`, `pgx/phasing.rs`, o
 From the research report:
 
 1. **Missing data treated as wildtype** (Section: PGx Star-Allele Calling):
-   > "'Nicht getestet' ist nicht 'Wildtyp'. Wenn definierende Sites fehlen, ist ein
-   > 'Normal' oft nicht ableitbar und muss als 'Unklar/Indeterminate' zurückgegeben werden."
+   > "'Not tested' is not 'wildtype'. When defining sites are missing, a 'Normal'
+   > result is often not derivable and must be returned as 'Unclear/Indeterminate'."
 
 2. **Phase ambiguity** (Section: PGx Star-Allele Calling):
-   > "TPMT*3A ohne Phasing erzwingen → falscher Diplotyp (cis/trans)."
+   > "Forcing TPMT*3A without phasing → incorrect diplotype (cis/trans)."
 
 3. **Diplotype inference** (Section: PGx Star-Allele Calling):
-   > "Möglichkeitsraum aller Haplotyppaare bilden, die die (ungephaseten) Genotypcounts
-   > erklären; bei Mehrdeutigkeit 'ambiguous call' statt erzwungenem Ergebnis."
+   > "Enumerate the possibility space of all haplotype pairs that explain the (unphased)
+   > genotype counts; in case of ambiguity, return 'ambiguous call' rather than a forced result."
 
 All three are correctly implemented in Path B but unreachable.
 

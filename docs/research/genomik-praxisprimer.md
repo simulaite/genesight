@@ -1,37 +1,37 @@
-# Genomik-Praxisprimer für Software Engineers
+# Genomics Practical Primer for Software Engineers
 
 ## Executive Summary
 
-Eine konsistente, sichere Consumer-Genomics-Annotation scheitert in der Praxis selten an “fehlenden Daten”, sondern fast immer an falsch ausgerichteten Repräsentationen: falscher Build, falsche Strandkonvention, fehlende Normalisierung, falsches Allel gezählt, falsche Annahmen bei fehlenden Markern. Das ist kein “Bio-Problem”, sondern ein Datenmodell- und Normalisierungsproblem. citeturn26view1turn26view0turn9view2turn9view3turn12search7turn27search1
+A consistent, secure consumer genomics annotation fails in practice rarely because of "missing data," but almost always because of misaligned representations: wrong build, wrong strand convention, missing normalization, wrong allele counted, wrong assumptions for missing markers. This is not a "bio problem" but a data model and normalization problem. citeturn26view1turn26view0turn9view2turn9view3turn12search7turn27search1
 
-Für eine GeneSight-ähnliche Pipeline ist sicherheitskritisch:
+For a GeneSight-like pipeline, the following are safety-critical:
 
-- **Build/Koordinaten/Ref-Allele erzwingen:** Jede Eingabe muss eindeutig an eine Referenz (GRCh37/GRCh38 + Contig-Naming) gebunden werden; “chr”-Präfixe und MT/chrM sind keine Kosmetik, sondern Teil des Identitätsschemas. citeturn39view1turn39view3turn12search2turn26view1  
-- **Strand- und Allel-Normalisierung vor jeder Interpretation:** Consumer-Rohdaten sind oft plus/forward bezogen auf GRCh37, aber interop mit Illumina-Manifesten (TOP/BOT, A/B) und externen Ressourcen erfordert explizite Übersetzung. citeturn26view1turn26view0turn9view2turn9view3turn25search0  
-- **Allele zählen statt rsID “matchen”:** Die Annotation ist immer an ein **konkretes Allel** gekoppelt (Pathogen/Risk/Effect allele). Ohne “allele-aware” Matching sind Ergebnisse strukturell falsch. citeturn9view3turn16view1turn33view1  
-- **Klinische Aussagen strikt an Evidenzstufen binden:** ClinVar liefert aggregierte Klassifikationen und Review-Status; beides muss in UI/Score einfließen. citeturn28search0turn28search19turn19search4turn19search2  
-- **Pharmakogenetik nicht als einzelne SNPs behandeln:** Star-Allele/Diplotyp/Phänotyp-Tabellen (CPIC/PharmVar) sind das Modell; Consumer-Arrays sind zudem CNV-blind (v. a. CYP2D6). citeturn20search8turn20search1turn20search16turn20search5turn10search7  
-- **Validierung wie Software-Engineering:** Gold-Standards (GIAB/NIST), Regressionstests für Normalisierung/Allelezählung, Provenance-Logging. citeturn5search19turn5search15  
+- **Enforce build/coordinates/REF alleles:** Every input must be unambiguously bound to a reference (GRCh37/GRCh38 + contig naming); "chr" prefixes and MT/chrM are not cosmetic but part of the identity schema. citeturn39view1turn39view3turn12search2turn26view1
+- **Strand and allele normalization before any interpretation:** Consumer raw data is often plus/forward relative to GRCh37, but interop with Illumina manifests (TOP/BOT, A/B) and external resources requires explicit translation. citeturn26view1turn26view0turn9view2turn9view3turn25search0
+- **Count alleles instead of "matching" rsIDs:** Annotation is always coupled to a **specific allele** (pathogenic/risk/effect allele). Without "allele-aware" matching, results are structurally incorrect. citeturn9view3turn16view1turn33view1
+- **Strictly bind clinical assertions to evidence levels:** ClinVar provides aggregated classifications and review status; both must feed into UI/score. citeturn28search0turn28search19turn19search4turn19search2
+- **Do not treat pharmacogenetics as individual SNPs:** Star alleles/diplotype/phenotype tables (CPIC/PharmVar) are the model; consumer arrays are also CNV-blind (especially CYP2D6). citeturn20search8turn20search1turn20search16turn20search5turn10search7
+- **Validate like software engineering:** Gold standards (GIAB/NIST), regression tests for normalization/allele counting, provenance logging. citeturn5search19turn5search15
 
-## Biologische Grundlagen für Annotation
+## Biological Fundamentals for Annotation
 
-DNA ist eine **gerichtete Zeichenkette** über einem Alphabet {A,C,G,T}, physikalisch als Doppelhelix organisiert; die beiden Stränge sind komplementär (A↔T, C↔G). Das ist die Grundlage für alle “Strand”-Fehlerklassen: dieselbe Stelle lässt sich als Base oder als Komplementbase beschreiben. citeturn9view1turn7search11turn7search0turn26view1
+DNA is a **directed string** over an alphabet {A,C,G,T}, physically organized as a double helix; the two strands are complementary (A-T, C-G). This is the basis for all "strand" error classes: the same position can be described as a base or as a complement base. citeturn9view1turn7search11turn7search0turn26view1
 
-**Gene, Transkripte, Proteine (mentales Modell):** Ein Gen ist eine vererbliche Informationseinheit; in Eukaryoten besteht ein Gen typischerweise aus **Exons** (bleiben im mRNA-Endprodukt) und **Introns** (werden beim Spleißen entfernt). Promotoren steuern den Start der Transkription. mRNA wird anschließend zu Protein translatiert; Codons sind 3er-Buchstabenwörter, Open Reading Frames definieren den lesbaren Rahmen. citeturn6search10turn6search0turn9view0turn6search11turn6search1turn7search1turn7search8turn6search3turn6search14
+**Genes, Transcripts, Proteins (mental model):** A gene is a heritable unit of information; in eukaryotes, a gene typically consists of **exons** (remain in the final mRNA product) and **introns** (removed during splicing). Promoters control the start of transcription. mRNA is subsequently translated into protein; codons are 3-letter words, open reading frames define the readable frame. citeturn6search10turn6search0turn9view0turn6search11turn6search1turn7search1turn7search8turn6search3turn6search14
 
-**UTRs (5′/3′) sind transkribiert, aber nicht Teil der kanonischen Proteinsequenz:** Sie flankieren die Coding Sequence und beeinflussen Regulation (Stabilität/Translation etc.). Für Annotation heißt das: viele krankheitsrelevante Varianten liegen außerhalb der CDS, aber sind trotzdem biologisch wirksam. citeturn7search6turn6search5
+**UTRs (5'/3') are transcribed but not part of the canonical protein sequence:** They flank the coding sequence and influence regulation (stability/translation etc.). For annotation, this means: many disease-relevant variants lie outside the CDS but are still biologically functional. citeturn7search6turn6search5
 
-**Variantenklassen als Datentypen:**  
-SNVs/SNPs (Single Base), kleine Indels, CNVs (Copy-Number), strukturelle Varianten (SVs: größere Rearrangements). Für eine Pipeline ist wichtig, dass **jede Klasse andere Normalisierung/Matching-Regeln** braucht; rsID-only ist primär ein SNP/kleine-Indel-Shortcut. citeturn5search17turn10search7turn27search2
+**Variant classes as data types:**
+SNVs/SNPs (single base), small indels, CNVs (copy number), structural variants (SVs: larger rearrangements). For a pipeline, it is important that **each class requires different normalization/matching rules**; rsID-only is primarily an SNP/small-indel shortcut. citeturn5search17turn10search7turn27search2
 
-**Zygosität und Genotypzählung:** In diploiden Abschnitten liegt ein Genotyp als 0/1/2 Kopien eines Allels vor; bei X/Y existiert Hemizygosität (eine Kopie). Compound-Heterozygotie bedeutet zwei unterschiedliche pathogene Allele im selben Genlocus. Diese Begriffe sind direkt UI-relevant (Carrier vs. betroffen, Dominant/Rezessiv-Logik). citeturn7search3turn7search7turn37search2turn37search3
+**Zygosity and genotype counting:** In diploid regions, a genotype is present as 0/1/2 copies of an allele; for X/Y, hemizygosity exists (one copy). Compound heterozygosity means two different pathogenic alleles at the same gene locus. These terms are directly UI-relevant (carrier vs. affected, dominant/recessive logic). citeturn7search3turn7search7turn37search2turn37search3
 
-**Haplotypen, Phasing, Linkage Disequilibrium:** Ein Haplotyp ist ein Block gemeinsam vererbter Varianten; Phasing ordnet Varianten den beiden elterlichen Chromosomenkopien zu. LD ist der statistische “Kopplungsgrad” zwischen Varianten und ermöglicht z. B. strand alignment bei palindromischen SNPs durch Referenzmuster. citeturn3search0turn24search0turn25search0
+**Haplotypes, Phasing, Linkage Disequilibrium:** A haplotype is a block of co-inherited variants; phasing assigns variants to the two parental chromosome copies. LD is the statistical "coupling degree" between variants and enables, for example, strand alignment for palindromic SNPs via reference patterns. citeturn3search0turn24search0turn25search0
 
-**Allelfrequenz, Penetranz, Expressivität:**  
-Allelfrequenz ist die Populationshäufigkeit eines Allels und ist ein Kernsignal für “zu häufig für hochpenetrante Mendel-Erkrankung”. Penetranz ist die Wahrscheinlichkeit, dass ein Genotyp überhaupt phänotypisch sichtbar wird; Expressivität beschreibt die Ausprägungsvariation. citeturn4search1turn4search3turn7search6turn19search2turn17search5
+**Allele Frequency, Penetrance, Expressivity:**
+Allele frequency is the population frequency of an allele and is a key signal for "too common for a highly penetrant Mendelian disease." Penetrance is the probability that a genotype becomes phenotypically visible at all; expressivity describes the variation in manifestation. citeturn4search1turn4search3turn7search6turn19search2turn17search5
 
-**Erbgänge:** autosomal-dominant/-rezessiv, X-chromosomal, mitochondrial (maternal). Für mtDNA kommen zusätzlich Heteroplasmie und Gewebeabhängigkeit dazu; Consumer-Arrays sind hierfür oft ungeeignet oder nur eingeschränkt interpretierbar. citeturn37search21turn37search0turn37search3turn37search1
+**Inheritance patterns:** autosomal dominant/recessive, X-linked, mitochondrial (maternal). For mtDNA, heteroplasmy and tissue dependence additionally apply; consumer arrays are often unsuitable or only partially interpretable for these. citeturn37search21turn37search0turn37search3turn37search1
 
 ```mermaid
 flowchart LR
@@ -43,113 +43,113 @@ flowchart LR
   DNA --> ExonIntron["Exons + Introns"]
 ```
 
-## Labor- und Messmethoden
+## Laboratory and Measurement Methods
 
-### Genotyping-Arrays
+### Genotyping Arrays
 
-Consumer-Dienste setzen überwiegend SNP-Arrays ein: Pro Marker gibt es Sonden/Probes, Intensitäten werden in Genotypklassen (AA/AB/BB) geclustert; das Ergebnis ist eine Liste getesteter Positionen, nicht “das Genom”. Illumina unterscheidet mehrere Ebenen der Allel-/Strandbezeichnung: **TOP/BOT-Strand** und **A/B-Allele** sind interne, kontextbasierte Illumina-Konventionen, die nicht automatisch der dbSNP-FWD/REV-Orientierung entsprechen. citeturn9view2turn9view3turn25search13turn26view2
+Consumer services predominantly use SNP arrays: for each marker there are probes, intensities are clustered into genotype classes (AA/AB/BB); the result is a list of tested positions, not "the genome." Illumina distinguishes several levels of allele/strand designation: **TOP/BOT strand** and **A/B alleles** are internal, context-based Illumina conventions that do not automatically correspond to the dbSNP FWD/REV orientation. citeturn9view2turn9view3turn25search13turn26view2
 
-**Illumina-Manifest-Dateien sind der Schlüssel zur korrekten Übersetzung:** Für GSA stellt Illumina Manifest-Dateien (CSV/BPM) getrennt für GRCh37 und GRCh38 bereit sowie Cluster-Files (EGT), die das Clustering repräsentieren. Das Manifest enthält u. a. IlmnStrand/RefStrand und die SNP-Notation in Illumina-Syntax. citeturn26view2turn9view3
+**Illumina manifest files are the key to correct translation:** For GSA, Illumina provides manifest files (CSV/BPM) separately for GRCh37 and GRCh38 as well as cluster files (EGT) that represent the clustering. The manifest contains, among other things, IlmnStrand/RefStrand and the SNP notation in Illumina syntax. citeturn26view2turn9view3
 
-### Strand/Build in Consumer-Rohdaten
+### Strand/Build in Consumer Raw Data
 
-Für die zwei relevanten Consumer-Exports ist dokumentiert:
+For the two relevant consumer exports, the following is documented:
 
-- 23andMe: Genotypen werden auf dem **Plus-Strang** der jeweiligen Referenz (standardmäßig GRCh37, optional GRCh38) berichtet; Mismatches zu Drittquellen entstehen u. a. durch andere Strang-/Build-Referenzen. citeturn26view1turn22search6  
-- AncestryDNA: Genotypen werden auf dem **Forward-Strang relativ zu GRCh37** berichtet. citeturn26view0  
+- 23andMe: Genotypes are reported on the **plus strand** of the respective reference (GRCh37 by default, optionally GRCh38); mismatches to third-party sources arise, among other reasons, from different strand/build references. citeturn26view1turn22search6
+- AncestryDNA: Genotypes are reported on the **forward strand relative to GRCh37**. citeturn26view0
 
-Das löst nicht automatisch das Interop-Problem, weil Datenbanken/Tools zusätzliche Konventionen nutzen (Illumina-Manifest, dbSNP/PTLP, GWAS-Summary-Harmonisierung). citeturn9view3turn14search5turn33view1
+This does not automatically solve the interop problem, because databases/tools use additional conventions (Illumina manifest, dbSNP/PTLP, GWAS summary harmonization). citeturn9view3turn14search5turn33view1
 
-### Sequenzierung und Variant Calling
+### Sequencing and Variant Calling
 
-Sequenzierung bestimmt Basenfolgen direkt (WGS/WES/Targeted). WGS deckt das ganze Genom ab; WES fokussiert Exons und ist typischerweise günstiger als WGS, aber nicht proportional zur Exomgröße. citeturn6search6turn19search7turn10search4
+Sequencing determines base sequences directly (WGS/WES/targeted). WGS covers the entire genome; WES focuses on exons and is typically cheaper than WGS, but not proportionally to the exome size. citeturn6search6turn19search7turn10search4
 
-**Kurzreads: typische Pipeline**: Reads werden gegen eine Referenz gemappt (z. B. BWA), als SAM/BAM gespeichert (SAM-Spezifikation), dann werden Varianten caller-seitig in VCF/BCF konsolidiert (z. B. GATK Best Practices für SNPs/Indels). citeturn23search0turn23search2turn23search1turn23search6  
+**Short reads: typical pipeline**: Reads are mapped against a reference (e.g., BWA), stored as SAM/BAM (SAM specification), then variants are consolidated caller-side into VCF/BCF (e.g., GATK Best Practices for SNPs/indels). citeturn23search0turn23search2turn23search1turn23search6
 
-**VCF-Qualitätsfelder (engineering-relevant):** DP (Depth), GQ (Genotype Quality), PL (Phred-scaled Genotype Likelihoods) sind standardisiert im VCF-Ökosystem und eignen sich als maschinenlesbare Confidence-Signale. citeturn26view3turn24search21turn23search1
+**VCF quality fields (engineering-relevant):** DP (Depth), GQ (Genotype Quality), PL (Phred-scaled Genotype Likelihoods) are standardized in the VCF ecosystem and are suitable as machine-readable confidence signals. citeturn26view3turn24search21turn23search1
 
-### CNVs/SVs und Long Reads
+### CNVs/SVs and Long Reads
 
-CNVs können aus SNP-Arrays über Intensitätsmaße (BAF/LRR) modellbasiert geschätzt werden (z. B. PennCNV), sind aber methodisch schwieriger und tool-abhängig. citeturn10search7turn10search3  
-Long-Read-Sequenzierung liest deutlich längere DNA-Fragmente und verbessert insbesondere SV- und Haplotyp-Auflösung. citeturn19search14turn19search19
+CNVs can be model-based estimated from SNP arrays via intensity measures (BAF/LRR) (e.g., PennCNV), but are methodologically more difficult and tool-dependent. citeturn10search7turn10search3
+Long-read sequencing reads significantly longer DNA fragments and particularly improves SV and haplotype resolution. citeturn19search14turn19search19
 
 ### Targeted Assays
 
-Sanger-Sequenzierung ist ein klassisches, hochgenaues Targeted-Verfahren (Chain-Termination), geeignet zur Bestätigung einzelner Varianten; PCR ist häufig die Vorstufe zur gezielten Amplifikation. citeturn23search3turn23search7turn23search11
+Sanger sequencing is a classic, highly accurate targeted method (chain termination), suitable for confirming individual variants; PCR is often the preliminary step for targeted amplification. citeturn23search3turn23search7turn23search11
 
-## Datenformate und Standards
+## Data Formats and Standards
 
-### Referenzgenome und Koordinaten
+### Reference Genomes and Coordinates
 
-GRCh38 ist die aktuelle offizielle Bezeichnung der humanen Referenz; UCSC nennt GRCh38 “hg38”, aber das ist nicht der offizielle Name. Patch-Releases (z. B. GRCh38.pX) verändern Import/Alt-Loci ohne Koordinatenbruch; in Toolchains werden Patches oft aus Betriebsgründen nicht unterstützt. citeturn39view1turn39view3turn13search3  
+GRCh38 is the current official designation of the human reference; UCSC calls GRCh38 "hg38," but that is not the official name. Patch releases (e.g., GRCh38.pX) modify imports/alt loci without breaking coordinates; in toolchains, patches are often not supported for operational reasons. citeturn39view1turn39view3turn13search3
 
-GRCh38 ist zudem die erste große **koordinatenändernde** Assembly seit 2009 (vs. GRCh37) und enthält viele Fixes von Single-Base bis Mb-Skala. citeturn39view2
+GRCh38 is also the first major **coordinate-changing** assembly since 2009 (vs. GRCh37) and contains many fixes from single-base to Mb scale. citeturn39view2
 
 ### rsID, VCF, HGVS, SPDI, VRS
 
-- **rsID** ist ein Datenbank-Identifier (dbSNP/ClinVar/…); er ist praktisch, aber nicht vollständig stabil (Merges/Updates) und ersetzt nie die konkrete Allel- und Positionsrepräsentation. dbSNP berichtet Allele in der neuen RefSNP-Report-Logik konsistent “forward” relativ zur berichteten Sequenz (typisch: GRCh38/PTLP). citeturn14search5turn11search1turn27search3  
-- **VCF** ist die dominante Austauschrepräsentation für Varianten; Indel-Normalisierung (Left-Alignment/Trimming) ist für Vergleichbarkeit entscheidend. citeturn24search21turn12search7  
-- **HGVS** ist die humanlesbare klinische Nomenklatur (DNA/RNA/Protein). citeturn11search3turn11search11turn11search23  
-- **SPDI** ist ein NCBI-Datenmodell (Sequence, Position, Deletion, Insertion) und wird u. a. zur Normalisierung/Interkonversion genutzt; SPDI-Position ist 0-basiert (praktisch relevant bei Off-by-one). citeturn14search1turn16view1turn14search5  
-- **GA4GH VRS** ist eine maschinenpräzise Spezifikation für Variationsrepräsentation inkl. Normalisierung (fully-justified). citeturn27search9turn27search1turn11search18turn27search0  
+- **rsID** is a database identifier (dbSNP/ClinVar/...); it is practical but not fully stable (merges/updates) and never replaces the concrete allele and position representation. dbSNP reports alleles in the new RefSNP report logic consistently "forward" relative to the reported sequence (typically: GRCh38/PTLP). citeturn14search5turn11search1turn27search3
+- **VCF** is the dominant exchange representation for variants; indel normalization (left-alignment/trimming) is critical for comparability. citeturn24search21turn12search7
+- **HGVS** is the human-readable clinical nomenclature (DNA/RNA/protein). citeturn11search3turn11search11turn11search23
+- **SPDI** is an NCBI data model (Sequence, Position, Deletion, Insertion) and is used, among other things, for normalization/interconversion; SPDI position is 0-based (practically relevant for off-by-one errors). citeturn14search1turn16view1turn14search5
+- **GA4GH VRS** is a machine-precise specification for variation representation including normalization (fully-justified). citeturn27search9turn27search1turn11search18turn27search0
 
-### Liftover und Normalisierung
+### Liftover and Normalization
 
-Liftover zwischen Assemblies basiert auf Whole-Genome-Alignments/Chain-Files und ist nicht “nur Kontig umbenennen”. Für GRCh37↔GRCh38 sind **UCSC liftOver** und das **Ensembl-Assembly-Map REST API** robuste Optionen; der frühere NCBI Remap-Dienst ist eingestellt. citeturn13search0turn13search9turn12search6turn12search0turn39view3  
+Liftover between assemblies is based on whole-genome alignments/chain files and is not "just renaming contigs." For GRCh37-GRCh38, **UCSC liftOver** and the **Ensembl Assembly Map REST API** are robust options; the former NCBI Remap service has been discontinued. citeturn13search0turn13search9turn12search6turn12search0turn39view3
 
-**VCF-Normalisierung:** `bcftools norm` kann Indels left-alignen, normalisieren, multiallelische Sites splitten und REF gegen die Referenz prüfen. Das ist Pflicht, bevor du “gleich” vergleichst. citeturn12search7turn12search3
+**VCF normalization:** `bcftools norm` can left-align indels, normalize, split multiallelic sites, and check REF against the reference. This is mandatory before you compare as "equal." citeturn12search7turn12search3
 
-## Populationsgenetik für Annotation und PRS
+## Population Genetics for Annotation and PRS
 
-### Hardy–Weinberg und QC
+### Hardy-Weinberg and QC
 
-Hardy–Weinberg Equilibrium (HWE) ist ein Modell, das erwartete Genotypfrequenzen aus Allelfrequenzen ableitet; Abweichungen werden in GWAS/QC häufig als Signal für Genotyping-Fehler genutzt. citeturn17search7turn17search11turn35view0turn25search9
+Hardy-Weinberg Equilibrium (HWE) is a model that derives expected genotype frequencies from allele frequencies; deviations are frequently used in GWAS/QC as a signal for genotyping errors. citeturn17search7turn17search11turn35view0turn25search9
 
-### Populationsstruktur und Ancestry
+### Population Structure and Ancestry
 
-Populationsstruktur erzeugt systematische Allelfrequenzunterschiede zwischen Gruppen; das ist eine Hauptquelle für Scheinkorrelationen. PCA-basierte Korrektur (EIGENSTRAT/Prinzipal Components) ist Standard in GWAS; ADMIXTURE liefert modellbasierte “Ancestry proportions”. citeturn18search1turn18search0  
+Population structure creates systematic allele frequency differences between groups; this is a major source of spurious correlations. PCA-based correction (EIGENSTRAT/principal components) is standard in GWAS; ADMIXTURE provides model-based "ancestry proportions." citeturn18search1turn18search0
 
-Für Consumer-Annotation ist das praktisch relevant, weil:
+For consumer annotation, this is practically relevant because:
 
-- Allelfrequenzen (z. B. aus gnomAD) populationsspezifisch variieren. citeturn4search1turn17search5turn17search9  
-- GWAS/PRS sind oft deutlich besser in europäischen Kohorten als in anderen Ancestries; derzeitige PRS können Ungleichheiten verstärken, wenn man sie unkritisch “portiert”. citeturn18search2  
+- Allele frequencies (e.g., from gnomAD) vary population-specifically. citeturn4search1turn17search5turn17search9
+- GWAS/PRS are often significantly better in European cohorts than in other ancestries; current PRS can amplify inequalities if uncritically "ported." citeturn18search2
 
-### Referenzpanels
+### Reference Panels
 
-1000 Genomes Phase 3 umfasst 2.504 Individuen aus 26 Populationen (ursprünglich GRCh37, reanalysiert auf GRCh38) und dient u. a. als Referenzpanel für Imputation/Phasing. citeturn17search8turn17search0turn24search3  
-gnomAD aggregiert große Exom/Genom-Kohorten und ist die zentrale Frequenzreferenz in Forschung und klinischer Interpretation. citeturn17search9turn17search5  
+1000 Genomes Phase 3 comprises 2,504 individuals from 26 populations (originally GRCh37, reanalyzed on GRCh38) and serves, among other things, as a reference panel for imputation/phasing. citeturn17search8turn17search0turn24search3
+gnomAD aggregates large exome/genome cohorts and is the central frequency reference in research and clinical interpretation. citeturn17search9turn17search5
 
-### GWAS-Effektgrößen, Risikoallele, PRS
+### GWAS Effect Sizes, Risk Alleles, PRS
 
-GWAS-Effektgrößen sind typischerweise **pro Effektallelzählung** (per-allele) angegeben; für binäre Merkmale als “increased odds per risk allele count”. citeturn35view0turn34search5  
+GWAS effect sizes are typically reported **per effect allele count** (per-allele); for binary traits as "increased odds per risk allele count." citeturn35view0turn34search5
 
-Für PRS ist die Standardidee: **Dosage des Effektallels (0/1/2) × Gewicht**, summiert über Varianten; das PGS Catalog Download-Schema beschreibt diese Semantik explizit. citeturn36search9turn36search0  
+For PRS, the standard idea is: **dosage of the effect allele (0/1/2) x weight**, summed over variants; the PGS Catalog download schema describes this semantics explicitly. citeturn36search9turn36search0
 
-Für produktive Implementationen ist relevant, dass das GWAS Catalog inzwischen GWAS-SSF erzwingt und harmonisierte Files bereitstellt: obligatorische Felder umfassen u. a. Chromosom, Position, Effektallel, anderes Allel, Beta/OR/HR, SE, Effektallelfrequenz und p-Wert; harmonisierte Versionen sind auf GRCh38, Allele “forward strand” orientiert, nicht harmonisierbare Varianten werden entfernt. citeturn33view1
+For production implementations, it is relevant that the GWAS Catalog now enforces GWAS-SSF and provides harmonized files: mandatory fields include chromosome, position, effect allele, other allele, beta/OR/HR, SE, effect allele frequency, and p-value; harmonized versions are on GRCh38, alleles "forward strand" oriented, non-harmonizable variants are removed. citeturn33view1
 
-## Klinische Interpretation und Pharmakogenetik
+## Clinical Interpretation and Pharmacogenetics
 
-### ClinVar und ACMG-Grundlogik
+### ClinVar and ACMG Basic Logic
 
-ClinVar ist ein öffentliches Archiv von Varianten-Interpretationen (Krankheit und Drug Response) und berechnet aggregierte Klassifikationen getrennt nach **germline**, **somatic clinical impact** und **oncogenicity**. citeturn28search17turn28search0turn28search9turn28search1  
+ClinVar is a public archive of variant interpretations (disease and drug response) and calculates aggregated classifications separately for **germline**, **somatic clinical impact**, and **oncogenicity**. citeturn28search17turn28search0turn28search9turn28search1
 
-Die klinische Terminologie “pathogenic/likely pathogenic/VUS/likely benign/benign” ist durch ACMG/AMP standardisiert. citeturn19search4turn19search1  
+The clinical terminology "pathogenic/likely pathogenic/VUS/likely benign/benign" is standardized by ACMG/AMP. citeturn19search4turn19search1
 
-**Review-Status** (Sterne) ist ein eigenständiges Evidenzsignal; ClinVar berechnet Review-Status pro Klassifikationstyp auf VCV/RCV. Ohne dieses Signal ist “Pathogenic”-UI gefährlich überkonfident. citeturn28search19turn28search3  
+**Review status** (stars) is an independent evidence signal; ClinVar calculates review status per classification type on VCV/RCV. Without this signal, a "Pathogenic" UI is dangerously overconfident. citeturn28search19turn28search3
 
-**Populationsfrequenz als Benign-Signal:** BA1 nutzt eine hohe Allelfrequenz (klassisch 5%) als Standalone-Benign-Evidenz; ClinGen SVI hat die BA1-Definition präzisiert (u. a. Populationsdatensatzgröße). citeturn19search2turn19search9
+**Population frequency as a benign signal:** BA1 uses a high allele frequency (classically 5%) as standalone benign evidence; ClinGen SVI has refined the BA1 definition (including population dataset size). citeturn19search2turn19search9
 
-### Pharmakogenetik: Named Alleles, Diplotypen, Phänotypen
+### Pharmacogenetics: Named Alleles, Diplotypes, Phenotypes
 
-Pharmakogenetikmodell: Definiere **Named Alleles (Star-Allele)** als Variantensets, rufe daraus **Diplotyp** (zwei Haplotypen) ab, übersetze über Funktions-/Phänotyptabellen (z. B. Activity Score für CYP2D6) in klinische Kategorien. CPIC/ClinPGx stellen Diplotype-to-Phenotype Tabellen bereit. citeturn20search1turn20search5turn20search13  
+Pharmacogenetics model: Define **named alleles (star alleles)** as variant sets, derive **diplotype** (two haplotypes) from them, translate via function/phenotype tables (e.g., Activity Score for CYP2D6) into clinical categories. CPIC/ClinPGx provide diplotype-to-phenotype tables. citeturn20search1turn20search5turn20search13
 
-PharmCAT implementiert diese Logik als Pipeline; der Named Allele Matcher ruft Diplotypen aus Variant-Calls ab und kann auch unabhängig laufen. CPIC stellt zudem Architekturbeispiele/Module für PharmCAT bereit. citeturn20search8turn20search0turn20search16turn20search4  
+PharmCAT implements this logic as a pipeline; the Named Allele Matcher derives diplotypes from variant calls and can also run independently. CPIC also provides architecture examples/modules for PharmCAT. citeturn20search8turn20search0turn20search16turn20search4
 
-**Array-Limitierungen:** Komplexe Pharmakogene (v. a. CYP2D6) sind stark von SV/CNV geprägt; viele Star-Allele-Caller sind für NGS entworfen (Stargazer/Aldy) und modellieren Copy Number explizit. Das ist ein struktureller Hinweis: Consumer-Arrays liefern bei solchen Genen oft nur unvollständige Evidenz. citeturn20search2turn20search19turn20search11turn10search7  
+**Array limitations:** Complex pharmacogenes (especially CYP2D6) are heavily shaped by SV/CNV; many star allele callers are designed for NGS (Stargazer/Aldy) and model copy number explicitly. This is a structural hint: consumer arrays often provide only incomplete evidence for such genes. citeturn20search2turn20search19turn20search11turn10search7
 
-## Engineering-Blueprint für GeneSight
+## Engineering Blueprint for GeneSight
 
-### Datenfluss und Safety-Gates
+### Data Flow and Safety Gates
 
 ```mermaid
 flowchart TD
@@ -161,17 +161,17 @@ flowchart TD
   Interpret --> Report["Report: provenance + disclaimers + exportable evidence"]
 ```
 
-Die Pipeline braucht harte Invarianten:
+The pipeline requires hard invariants:
 
-- **Jede Variante als (assembly, contig, pos, REF, ALT)** modellieren, rsID nur als sekundären Index. citeturn24search21turn14search5turn16view1  
-- **REF-Allele-Verifikation gegen Referenzgenom** (oder gegen kuratierte Sequenzquelle) vor Interpretation. Tooling: `bcftools norm -f ref.fa` prüft REF-Matches. citeturn12search7turn12search3  
-- **Allele- und Strandübersetzung explizit** (Illumina TOP/BOT/A/B ↔ plus/forward ↔ dbSNP/PTLP). citeturn9view2turn9view3turn14search5  
+- **Model every variant as (assembly, contig, pos, REF, ALT)**, rsID only as a secondary index. citeturn24search21turn14search5turn16view1
+- **REF allele verification against the reference genome** (or against a curated sequence source) before interpretation. Tooling: `bcftools norm -f ref.fa` checks REF matches. citeturn12search7turn12search3
+- **Allele and strand translation explicitly** (Illumina TOP/BOT/A/B - plus/forward - dbSNP/PTLP). citeturn9view2turn9view3turn14search5
 
-### Strand-/Allelnormalisierung: Kernalgorithmus
+### Strand/Allele Normalization: Core Algorithm
 
-**Problemklasse:** Dieselbe biochemische Variante kann als C>T auf plus-Strang oder als G>A auf minus-Strang erscheinen. Consumer-Rohdaten sind zwar oft plus/forward bezogen auf GRCh37, aber externe Quellen können je nach Pipeline, Manifest, oder historischer Konvention abweichen. citeturn26view1turn26view0turn9view3turn14search5  
+**Problem class:** The same biochemical variant can appear as C>T on the plus strand or as G>A on the minus strand. Consumer raw data is often plus/forward relative to GRCh37, but external sources can differ depending on pipeline, manifest, or historical convention. citeturn26view1turn26view0turn9view3turn14search5
 
-**Ambiguity:** Palindromische SNPs (A/T oder C/G) sehen nach Komplementierung identisch aus; reine Strand-Komplementierung reicht nicht, um Orientierung sicher aus Daten allein zu inferieren. Tools wie Genotype Harmonizer lösen das u. a. über LD-Muster; snpflip markiert reverse/ambiguous SNPs. citeturn25search0turn25search1  
+**Ambiguity:** Palindromic SNPs (A/T or C/G) look identical after complementation; pure strand complementation is not sufficient to reliably infer orientation from data alone. Tools like Genotype Harmonizer solve this via LD patterns, among other methods; snpflip marks reverse/ambiguous SNPs. citeturn25search0turn25search1
 
 Pseudocode (allele-aware, strand-aware, palindromic-aware):
 
@@ -220,100 +220,100 @@ alt_count = count_alt_copies(gt, db_ref_alt[1])
 return alt_count  # 0/1/2
 ```
 
-Warum diese Checks zwingend sind:
+Why these checks are mandatory:
 
-- VCF/ClinVar/dbSNP orientieren sich an Referenzsequenzen und erwarten konsistente REF/ALT; dbSNP betont “alleles forward to the reported sequence” und Angleichung an VCF/HGVS/SPDI. citeturn14search5turn11search1turn16view1turn24search21  
-- Illumina-Manifeste listen SNPs in A/B-Reihenfolge nach TOP/BOT, nicht in REF/ALT-Reihenfolge; ohne Manifestübersetzung ist REF/ALT-Matching falsch. citeturn9view3turn9view2  
-- GWAS-SSF harmonisiert Position/Allele; die harmonisierte GWAS-Catalog-Version orientiert Allele auf forward strand und GRCh38, aber legacy Inputs sind heterogen. citeturn33view1  
+- VCF/ClinVar/dbSNP orient themselves to reference sequences and expect consistent REF/ALT; dbSNP emphasizes "alleles forward to the reported sequence" and alignment with VCF/HGVS/SPDI. citeturn14search5turn11search1turn16view1turn24search21
+- Illumina manifests list SNPs in A/B order according to TOP/BOT, not in REF/ALT order; without manifest translation, REF/ALT matching is incorrect. citeturn9view3turn9view2
+- GWAS-SSF harmonizes position/alleles; the harmonized GWAS Catalog version orients alleles to forward strand and GRCh38, but legacy inputs are heterogeneous. citeturn33view1
 
-### Konkretes Beispiel: Allelezählung an einer realen Variante
+### Concrete Example: Allele Counting on a Real Variant
 
-Variante rs12248560 (CYP2C19*17) ist in ClinVar mit GRCh38-Location **10:94761900 C>T** (HGVS: NC_000010.11:g.94761900C>T) und SPDI **NC_000010.11:94761899:C:T** dokumentiert. citeturn16view1turn16view3  
+Variant rs12248560 (CYP2C19*17) is documented in ClinVar with GRCh38 location **10:94761900 C>T** (HGVS: NC_000010.11:g.94761900C>T) and SPDI **NC_000010.11:94761899:C:T**. citeturn16view1turn16view3
 
-Wenn (nach Build/Strand-Normalisierung) gilt:
+If (after build/strand normalization) the following holds:
 
-- REF = C  
-- ALT = T  
-- User-Genotyp = C/T  
+- REF = C
+- ALT = T
+- User genotype = C/T
 
-Dann ist ALT-Kopiezahl = 1. Für GWAS/PRS/“risk allele = T” wäre das “heterozygous risk (1 copy)”; für pharmakogenetische Sternallel-Definitionen wäre es nur ein Marker innerhalb eines Diplotyp-Modells, nicht der Phänotyp selbst. citeturn16view1turn20search1turn20search0turn35view0  
+Then ALT copy count = 1. For GWAS/PRS/"risk allele = T" this would be "heterozygous risk (1 copy)"; for pharmacogenetic star allele definitions, it would be only one marker within a diplotype model, not the phenotype itself. citeturn16view1turn20search1turn20search0turn35view0
 
-### Missing Data Policies und Confidence Scoring
+### Missing Data Policies and Confidence Scoring
 
-**Missingness darf nicht in “Reference” umgedeutet werden.** Consumer-Dateien enthalten “Not determined”/missing; bei 23andMe wird explizit darauf hingewiesen, dass Rohdaten nur informational sind und nicht für Diagnostik. citeturn40view0turn26view1  
+**Missingness must not be reinterpreted as "reference."** Consumer files contain "not determined"/missing; 23andMe explicitly states that raw data is informational only and not intended for diagnostics. citeturn40view0turn26view1
 
-Für Confidence:
+For confidence:
 
-- Sequenz-Vars: verwende DP/GQ/PL und FILTER, wie im VCF-Ökosystem vorgesehen. citeturn26view3turn24search21turn23search1  
-- Array-Vars: verwende, wenn vorhanden, GenTrain/Cluster-Metriken aus GenomeStudio Reports; Illumina beschreibt Report-Typen und Output-Formate. citeturn25search10turn25search13turn25search3  
+- Sequence vars: use DP/GQ/PL and FILTER, as specified in the VCF ecosystem. citeturn26view3turn24search21turn23search1
+- Array vars: use, if available, GenTrain/cluster metrics from GenomeStudio reports; Illumina describes report types and output formats. citeturn25search10turn25search13turn25search3
 
-**CNV/SV-Flags:** Bei pharmakogenetisch relevanten Genen mit CNV (CYP2D6) und generell bei SVs muss UI/Interpretation “nicht bestimmbar mit Array/WGS-short-only” kennen; PennCNV zeigt, dass SNP-Arrays CNVs modellieren können, aber Tool-Performance variiert stark. citeturn10search7turn10search3turn20search5  
+**CNV/SV flags:** For pharmacogenetically relevant genes with CNV (CYP2D6) and generally for SVs, UI/interpretation must recognize "not determinable with array/WGS-short-only"; PennCNV shows that SNP arrays can model CNVs, but tool performance varies significantly. citeturn10search7turn10search3turn20search5
 
-### Validierung: Testdaten und Regressionstests
+### Validation: Test Data and Regression Tests
 
-- Mindeststandard: NIST/Genome-in-a-Bottle Referenzmaterialien zur Bewertung von Variant-Calling-Performance und Fehlerprofilen. citeturn5search19turn5search15  
-- Zusätzlich: gezielte “golden cases” für Strand/Build/Palindromic/Indel-Normalisierung (z. B. künstliche VCFs, die bei `bcftools norm` deterministisch werden). citeturn12search7turn27search1  
+- Minimum standard: NIST/Genome-in-a-Bottle reference materials for evaluating variant calling performance and error profiles. citeturn5search19turn5search15
+- Additionally: targeted "golden cases" for strand/build/palindromic/indel normalization (e.g., synthetic VCFs that become deterministic under `bcftools norm`). citeturn12search7turn27search1
 
-### Priorisierte Safety-Checklist für Implementierung
+### Prioritized Safety Checklist for Implementation
 
-**Phase 0: Datenmodell- und Normalisierungsfundament (höchste Priorität)**  
-- Assembly/Contig-Naming strikt (GRCh37/38, chr vs. numeric, MT/chrM) inkl. Metadaten erzwingen. citeturn39view3turn26view1turn39view1  
-- REF-Allele verifizieren; Indels left-align/trim; multiallelic split. citeturn12search7turn12search3turn24search21  
-- Strand/Allel-Harmonisierung über Manifest/db; palindromic SNPs nur mit Resolver (Manifest/LD/Frequenz) oder als “ambiguous” blockieren. citeturn9view3turn25search0turn25search1turn33view1  
+**Phase 0: Data Model and Normalization Foundation (highest priority)**
+- Strictly enforce assembly/contig naming (GRCh37/38, chr vs. numeric, MT/chrM) including metadata. citeturn39view3turn26view1turn39view1
+- Verify REF alleles; left-align/trim indels; split multiallelic. citeturn12search7turn12search3turn24search21
+- Strand/allele harmonization via manifest/db; block palindromic SNPs only with resolver (manifest/LD/frequency) or as "ambiguous." citeturn9view3turn25search0turn25search1turn33view1
 
-**Phase 1: Klinische Evidenz korrekt abbilden**  
-- ClinVar: clinsig + review status + Klassifikationstyp (germline vs somatic) getrennt führen; UI/Score daran koppeln. citeturn28search0turn28search19turn28search1  
-- Frequenzfilter-Regeln (BA1/BS1/PM2) implementieren; Popmax/Ancestry-spezifische Frequenzen bevorzugen. citeturn19search2turn17search5turn17search9  
+**Phase 1: Correctly represent clinical evidence**
+- ClinVar: maintain clinsig + review status + classification type (germline vs. somatic) separately; couple UI/score to these. citeturn28search0turn28search19turn28search1
+- Implement frequency filter rules (BA1/BS1/PM2); prefer popmax/ancestry-specific frequencies. citeturn19search2turn17search5turn17search9
 
-**Phase 2: Pharmakogenetik als Named-Allele-System**  
-- Star-Allele-Definitionen aus PharmVar/CPIC, Diplotype→Phenotype Tabellen aus CPIC/ClinPGx, Pipeline analog PharmCAT. citeturn11search12turn20search1turn20search8turn20search16  
-- Missing SNPs in Diplotypen: “no call / partial match” statt Default-*1. citeturn20search0turn20search4  
-- CYP2D6/CNV: explizit “nicht zuverlässig aus Arrays” (oder: nur eingeschränkte Heuristiken mit klarer Unsicherheitskennzeichnung). citeturn20search5turn10search7turn20search19  
+**Phase 2: Pharmacogenetics as a named allele system**
+- Star allele definitions from PharmVar/CPIC, diplotype-to-phenotype tables from CPIC/ClinPGx, pipeline analogous to PharmCAT. citeturn11search12turn20search1turn20search8turn20search16
+- Missing SNPs in diplotypes: "no call / partial match" instead of default *1. citeturn20search0turn20search4
+- CYP2D6/CNV: explicitly "not reliable from arrays" (or: only limited heuristics with clear uncertainty labeling). citeturn20search5turn10search7turn20search19
 
-**Phase 3: GWAS/PRS robust und fair**  
-- Effektallelzählung (0/1/2) auf harmonisierte Allele; nur GWAS-SSF/harmonisierte Quellen oder eigener Harmonizer. citeturn33view1turn35view0turn36search9  
-- Ancestry-Limitierungen und Portabilität als zentraler Disclaimer/Score-Modifier. citeturn18search2turn18search7  
+**Phase 3: Robust and fair GWAS/PRS**
+- Effect allele counting (0/1/2) on harmonized alleles; only GWAS-SSF/harmonized sources or own harmonizer. citeturn33view1turn35view0turn36search9
+- Ancestry limitations and portability as a central disclaimer/score modifier. citeturn18search2turn18search7
 
-## Lernpfad für Informatiker
+## Learning Path for Computer Scientists
 
-| Thema | Zielniveau | Kernübung (Engineering-nah) | Warum das wichtig ist |
+| Topic | Target Level | Core Exercise (engineering-oriented) | Why This Matters |
 |---|---:|---|---|
-| Referenzgenome, Builds, Koordinaten | solide | Parser, der GRCh37/38 + chr-Namen normalisiert, und bei Mismatch hart bricht | verhindert “stille” Off-by-build Fehler citeturn39view3turn12search6turn39view1 |
-| VCF/BCF + Normalisierung | solide | `bcftools norm`-Äquivalenztests: gleiche Indel in 3 Repräsentationen → identische kanonische Form | Variant-Vergleichbarkeit citeturn12search7turn24search21 |
-| Strand/Allel-Harmonisierung | sehr solide | Unit-Tests für Komplementierung + palindromic Guards; Integration von Manifest-Resolver | häufigster Consumer-Fehler citeturn9view2turn9view3turn25search0 |
-| Genotyp/Phasing/Haplotyp | Grundlagen | VCF-Reader: GT mit “/” vs “|”, Phase sets (PS) erkennen | Diplotyp/PRS-Korrektheit citeturn24search21turn24search13turn24search0 |
-| gnomAD/Allelfrequenzen | solide | “BA1-Flagger”: Variant + Popfreq → benign evidence label | klinische Plausibilität citeturn17search9turn19search2turn17search5 |
-| ClinVar/ACMG | solide | Renderer: ClinVar clinsig + review status → UI-tiering | Patientensicherheit citeturn28search0turn28search19turn19search4 |
-| PGx (Star-Allele) | solide | Minimaler Named-Allele-Matcher (2–3 Gene) mit “partial match” Rückgabemodell | verhindert “SNP→Phänotyp”-Fehlschlüsse citeturn20search0turn20search1turn11search12 |
-| GWAS/PRS | Grundlagen→solide | Loader für GWAS-SSF/PGS scoring files, Effektallelzählung, Scoreberechnung | kontrollierte Risiko-Kommunikation citeturn33view1turn36search9turn36search0 |
-| Validierung/Truth Sets | solide | Regression suite gegen GIAB; “golden” palindromic cases | stabile Releases citeturn5search19turn5search15 |
+| Reference genomes, builds, coordinates | solid | Parser that normalizes GRCh37/38 + chr names, and hard-fails on mismatch | prevents "silent" off-by-build errors citeturn39view3turn12search6turn39view1 |
+| VCF/BCF + normalization | solid | `bcftools norm` equivalence tests: same indel in 3 representations -> identical canonical form | variant comparability citeturn12search7turn24search21 |
+| Strand/allele harmonization | very solid | Unit tests for complementation + palindromic guards; integration of manifest resolver | most common consumer error citeturn9view2turn9view3turn25search0 |
+| Genotype/phasing/haplotype | basics | VCF reader: GT with "/" vs. "\|", phase sets (PS) recognition | diplotype/PRS correctness citeturn24search21turn24search13turn24search0 |
+| gnomAD/allele frequencies | solid | "BA1 flagger": variant + pop freq -> benign evidence label | clinical plausibility citeturn17search9turn19search2turn17search5 |
+| ClinVar/ACMG | solid | Renderer: ClinVar clinsig + review status -> UI tiering | patient safety citeturn28search0turn28search19turn19search4 |
+| PGx (star alleles) | solid | Minimal named allele matcher (2-3 genes) with "partial match" return model | prevents "SNP -> phenotype" fallacies citeturn20search0turn20search1turn11search12 |
+| GWAS/PRS | basics -> solid | Loader for GWAS-SSF/PGS scoring files, effect allele counting, score calculation | controlled risk communication citeturn33view1turn36search9turn36search0 |
+| Validation/truth sets | solid | Regression suite against GIAB; "golden" palindromic cases | stable releases citeturn5search19turn5search15 |
 
-## Autoritative Ressourcen und Tooling
+## Authoritative Resources and Tooling
 
-**Primäre Datenquellen (offline-bundle-fähig, aber teils groß):**
+**Primary data sources (offline-bundle-capable, but some are large):**
 
-- ClinVar FTP/VCF und Dokumentation (Coverage/Limitierungen, Release-Zyklus). citeturn21search3turn27search2turn27search6turn21search19  
-- dbSNP Release Notes/FTP und Orientierung (RefSNP “forward orientation”, VCF/JSON). citeturn27search3turn14search5turn11search1  
-- gnomAD (Frequenzen, Nutzung in Interpretation). citeturn17search9turn17search5turn4search1  
-- GWAS Catalog GWAS-SSF (Pflichtfelder, harmonisierte forward-strand, GRCh38). citeturn33view1turn17search22  
-- PharmVar/CPIC/ClinPGx (Alleldefinitionen, Diplotype→Phenotype). citeturn11search12turn20search1turn20search17  
+- ClinVar FTP/VCF and documentation (coverage/limitations, release cycle). citeturn21search3turn27search2turn27search6turn21search19
+- dbSNP release notes/FTP and orientation (RefSNP "forward orientation," VCF/JSON). citeturn27search3turn14search5turn11search1
+- gnomAD (frequencies, usage in interpretation). citeturn17search9turn17search5turn4search1
+- GWAS Catalog GWAS-SSF (mandatory fields, harmonized forward-strand, GRCh38). citeturn33view1turn17search22
+- PharmVar/CPIC/ClinPGx (allele definitions, diplotype-to-phenotype). citeturn11search12turn20search1turn20search17
 
-**Referenz-Implementationen/Tools (für Architektur-Studium):**
+**Reference implementations/tools (for architecture study):**
 
-- PharmCAT (Named Allele Matcher, Pipeline-Architektur). citeturn20search8turn20search0turn20search16  
-- Ensembl VEP (allele-aware Annotation; Option, allele matching einzuschalten/abzuschalten). citeturn21search20turn21search4turn21search16  
-- HTSlib/bcftools (VCF/BCF I/O, Normalisierung, Tabix). citeturn21search9turn12search7turn23search2  
-- GA4GH VRS + vrs-python (Normalisierung, Identifier, Interkonversion). citeturn27search9turn27search0turn27search21  
-- Strand-Resolver: Genotype Harmonizer, snpflip. citeturn25search0turn25search1  
+- PharmCAT (Named Allele Matcher, pipeline architecture). citeturn20search8turn20search0turn20search16
+- Ensembl VEP (allele-aware annotation; option to enable/disable allele matching). citeturn21search20turn21search4turn21search16
+- HTSlib/bcftools (VCF/BCF I/O, normalization, Tabix). citeturn21search9turn12search7turn23search2
+- GA4GH VRS + vrs-python (normalization, identifiers, interconversion). citeturn27search9turn27search0turn27search21
+- Strand resolvers: Genotype Harmonizer, snpflip. citeturn25search0turn25search1
 
 ```text
-# URL-Paket (kuratierte Einstiegspunkte)
-# Referenzgenome / Assemblies
+# URL package (curated entry points)
+# Reference genomes / assemblies
 https://www.ncbi.nlm.nih.gov/grc/help/faq/
 https://rest.ensembl.org/documentation/info/assembly_map
 https://genome.ucsc.edu/cgi-bin/hgLiftOver
 
-# Consumer-Strand/Build
+# Consumer strand/build
 https://eu.customercare.23andme.com/hc/en-us/articles/115002090907-Raw-Genotype-Data-Technical-Details
 https://support.ancestry.com/articles/en_US/Support_Site/Downloading-DNA-Data
 
@@ -328,16 +328,16 @@ https://ncbiinsights.ncbi.nlm.nih.gov/2025/03/18/dbsnp-release-157/
 https://www.ncbi.nlm.nih.gov/core/assets/snp/docs/RefSNP_orientation_updates.pdf
 https://pmc.ncbi.nlm.nih.gov/articles/PMC7523648/
 
-# VCF / Normalisierung
+# VCF / normalization
 https://samtools.github.io/hts-specs/VCFv4.4.pdf
 https://www.htslib.org/doc/bcftools.html
 
-# Illumina TOP/BOT, Manifeste
+# Illumina TOP/BOT, manifests
 https://www.illumina.com/documents/products/technotes/technote_topbot.pdf
 https://knowledge.illumina.com/microarray/general/microarray-general-reference_material-list/000001489
 
 # GWAS-SSF
-https://oup.silverchair-cdn.com/article-minimal/7893318  # GWAS Catalog NAR update (GWAS-SSF Pflichtfelder/Harmonisierung)
+https://oup.silverchair-cdn.com/article-minimal/7893318  # GWAS Catalog NAR update (GWAS-SSF mandatory fields/harmonization)
 
 # CPIC/PharmCAT/PharmVar
 https://www.pharmvar.org/gene/cyp2c19

@@ -14,12 +14,12 @@ is a general medical disclaimer with no PGx-specific or FDA-specific content.
 
 ## Scientific Requirement
 
-From the research report (Section: Verantwortungsvolle Ergebnisdarstellung):
+From the research report (Section: Responsible Result Presentation):
 
-> Die FDA warnte öffentlich, dass viele PGx-Testclaims (inkl. direkt an Konsumenten
-> vermarkteter Tests und Software-Interpretationen) nicht von der FDA geprüft sind und
-> wissenschaftlich unzureichend gestützt sein können; Therapieänderungen auf Basis
-> solcher Claims können Patientenschaden verursachen.
+> The FDA publicly warned that many PGx test claims (including tests and software
+> interpretations marketed directly to consumers) have not been reviewed by the FDA and
+> may be insufficiently supported scientifically; therapy changes based on such claims
+> can cause patient harm.
 
 From the PIPELINE_OVERHAUL.md (Blueprint 7):
 

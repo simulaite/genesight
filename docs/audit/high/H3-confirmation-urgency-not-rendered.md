@@ -33,13 +33,13 @@ hit. The most critical safety signal in the entire system is silently dropped.
 
 ## Scientific Requirement
 
-From the research report (Section: Verantwortungsvolle Ergebnisdarstellung):
+From the research report (Section: Responsible Result Presentation):
 
-> Für sehr folgenreiche, medizinisch 'actionable' Gene/Krankheitsbilder existiert in der
-> klinischen Genomik die ACMG Secondary Findings (SF) Policy.
+> For highly consequential, medically 'actionable' genes/conditions, clinical genomics has
+> the ACMG Secondary Findings (SF) Policy.
 
-> Wenn eine Variante als hochrelevant erscheint, muss sie als 'High impact, confirm
-> clinically' ausgegeben werden, nicht als Diagnose.
+> When a variant appears highly relevant, it must be reported as 'High impact, confirm
+> clinically', not as a diagnosis.
 
 ## Fix Requirements
 

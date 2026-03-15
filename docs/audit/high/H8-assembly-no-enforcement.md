@@ -33,9 +33,9 @@ is ever added.
 
 From the research report (Section: Allele Matching):
 
-> Build-Mix (GRCh37 vs GRCh38) verursacht scheinbare 'Allele mismatch' und falsche
-> Annotationen; Liftover funktioniert zwar oft sehr gut, kann aber bei bestimmten
-> Variantentypen/Regionen scheitern, daher muss 'unmappable' explizit behandelt werden.
+> Build mix (GRCh37 vs GRCh38) causes apparent 'allele mismatch' and incorrect
+> annotations; liftover often works very well, but can fail for certain variant
+> types/regions, therefore 'unmappable' must be handled explicitly.
 
 ## Fix Requirements
 

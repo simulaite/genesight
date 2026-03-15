@@ -29,14 +29,14 @@ treated as germline-pathogenic, producing false clinical alerts for consumer ger
 
 ## Scientific Requirement
 
-From the research report (Section: ClinVar-Pathogenität korrekt interpretieren):
+From the research report (Section: Correctly Interpreting ClinVar Pathogenicity):
 
-> Seit 2024 trennt ClinVar klinische Klassifikationstypen (germline, somatic clinical
-> impact, oncogenicity) in getrennte Felder; 'clinical_significance' muss daher
-> kontextualisiert werden.
+> Since 2024, ClinVar separates clinical classification types (germline, somatic clinical
+> impact, oncogenicity) into separate fields; 'clinical_significance' must therefore
+> be contextualized.
 
-> Somatische/onko-Klassifikation als germline 'Pathogenic' ausgeben; ClinVar trennt
-> diese Klassifikationstypen.
+> Presenting somatic/oncogenicity classifications as germline 'Pathogenic'; ClinVar separates
+> these classification types.
 
 ## Fix Requirements
 

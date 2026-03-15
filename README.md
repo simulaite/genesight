@@ -198,3 +198,11 @@ GeneSight relies on the work of the following public databases and research inst
 - **SNPedia** -- Community-curated wiki of human genetic variants
 
 This tool is built on top of decades of publicly funded genomics research. We are grateful to the researchers, institutions, and volunteers who make these resources freely available.
+
+## Contact
+
+**STONKS GmbH**
+Buber-Neumann-Weg 68
+60439 Frankfurt am Main
+
+E-Mail: [info@simulaite.ai](mailto:info@simulaite.ai)

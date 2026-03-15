@@ -35,15 +35,15 @@ Only the PGx path skips strand awareness entirely.
 
 From the research report (Section: Allele Matching):
 
-> Für robuste Allelvergleiche ist die korrekte Regel: Allele auf denselben Build und
-> dieselbe (Plus-)Orientierung normalisieren und erst dann vergleichen.
+> For robust allele comparisons, the correct rule is: normalize alleles to the same build and
+> the same (plus-)orientation, and only then compare.
 
 The PGx pseudocode in the research explicitly requires:
-> 1) Input harmonisieren: Varianten auf eine Assembly bringen, Allele auf Plus-Strang
->    normalisieren, REF gegen Referenz prüfen.
-> 2) Allele-Definition laden
-> 3) Named-Allele-Matching: Für jede Star-Definition prüfen, ob die Nutzer-Genotypdaten
->    diese Haplotypdefinition zulassen
+> 1) Harmonize input: bring variants to one assembly, normalize alleles to plus strand,
+>    verify REF against reference.
+> 2) Load allele definitions
+> 3) Named-Allele-Matching: for each star definition, check whether the user's genotype data
+>    supports this haplotype definition
 
 Step 1 (normalization) is missing from the PGx path.
 

@@ -23,14 +23,14 @@ on OR thresholds. This is correct. However:
 
 ## Scientific Requirement
 
-From the research report (Section: GWAS-Risikointerpretation):
+From the research report (Section: GWAS Risk Interpretation):
 
-> OR ist ein Odds-Verhältnis, nicht direkt 'Risiko'. Für eine absolute Risikoapproximation
-> brauchst du eine Baseline-Risikoannahme p0. Ohne p0 ist 'absolutes Risiko' nicht
-> seriös berechenbar.
+> OR is an odds ratio, not directly 'risk'. For an absolute risk approximation
+> you need a baseline risk assumption p0. Without p0, 'absolute risk' cannot
+> be calculated reliably.
 
-> OR als 'absolutes Risiko' ausgeben ohne Baseline p0 und ohne RR/OR-Unterschied zu
-> erklären.
+> Presenting OR as 'absolute risk' without baseline p0 and without explaining the
+> RR/OR distinction.
 
 ## Example of Misleading Output
 

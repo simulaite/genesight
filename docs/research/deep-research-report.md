@@ -1,42 +1,42 @@
-# Wissenschaftlich korrekte Implementierung einer Consumer-Genomics-Annotation-Pipeline
+# Scientifically Correct Implementation of a Consumer Genomics Annotation Pipeline
 
-Zielzustand: Jede Annotation wird erst nach **kanonischer Variantendarstellung** (Build + Koordinaten + REF/ALT + Strang) und **Allele-zu-Allele-Abgleich** erzeugt; rsID ist nur ein Alias und nie der Primärschlüssel für klinische Aussagen. Die sicherheitskritischen Fehler in der aktuellen Pipeline (rsID-Lookup ohne Allelvergleich) erzeugen systematisch Falschzuordnungen bei Pathogenität, Risikoallelen und Pharmakogenetik.
+Target state: Every annotation is produced only after **canonical variant representation** (build + coordinates + REF/ALT + strand) and **allele-to-allele matching**; rsID is merely an alias and never the primary key for clinical assertions. The safety-critical bugs in the current pipeline (rsID lookup without allele comparison) systematically produce false assignments for pathogenicity, risk alleles, and pharmacogenetics.
 
-## Allele-Matching und Strang-Orientierung
+## Allele Matching and Strand Orientation
 
-**Wissenschaftlich korrekter Ansatz (Algorithmus + präzise Regeln)**  
-Consumer-Rohdaten sind typischerweise bereits als Nukleotide (A/C/G/T) angegeben; entscheidend ist, **auf welche Referenz (Build) und welchen Strang** sich diese Nukleotide beziehen. Für zwei große DTC-Formate gilt: 23andMe berichtet Genotypen standardmäßig auf dem **Plus-Strang** relativ zu **GRCh37** (und bietet im Raw-Data-Browser auch GRCh38 auf Plus-Strang), und AncestryDNA berichtet Rohdaten auf dem **Forward/Plus-Strang** relativ zu **GRCh37**. citeturn14search0turn14search1 Das reduziert, aber eliminiert nicht, Strangprobleme, weil alle externen Referenzdatenbanken (und/oder historische Exporte) anders kodiert oder anders normalisiert sein können.
+**Scientifically correct approach (algorithm + precise rules)**
+Consumer raw data are typically already provided as nucleotides (A/C/G/T); the critical factor is **which reference (build) and which strand** these nucleotides refer to. For two major DTC formats: 23andMe reports genotypes by default on the **plus strand** relative to **GRCh37** (and also offers GRCh38 on the plus strand in the raw data browser), and AncestryDNA reports raw data on the **forward/plus strand** relative to **GRCh37**. citeturn14search0turn14search1 This reduces but does not eliminate strand issues, because all external reference databases (and/or historical exports) may be differently encoded or differently normalized.
 
-Auf der Array-/Manifest-Ebene existieren zusätzliche Strangdefinitionen: Illumina nutzt u.a. **TOP/BOT** (stabil gegenüber Build-Änderungen, nicht identisch mit +/-) sowie Manifest-Spalten wie **IlmnStrand** (TOP/BOT für SNPs bzw. PLUS/MINUS für Indels) und **SourceStrand** (eingereichte Kunden-/Datenbank-Strandangabe). citeturn0search10turn18search0turn21view3 Wenn deine Pipeline nicht nur DTC-Exports, sondern auch (i) generische Illumina-Final-Reports oder (ii) Manifest-basierte Formate unterstützt, muss sie diese Stranglagen explizit auflösen.
+At the array/manifest level, additional strand definitions exist: Illumina uses, among others, **TOP/BOT** (stable across build changes, not identical to +/-) as well as manifest columns such as **IlmnStrand** (TOP/BOT for SNPs and PLUS/MINUS for indels) and **SourceStrand** (submitted customer/database strand designation). citeturn0search10turn18search0turn21view3 If your pipeline supports not only DTC exports but also (i) generic Illumina final reports or (ii) manifest-based formats, it must explicitly resolve these strand orientations.
 
-dbSNP ist als Primärquelle für rsID→(chr,pos,REF,ALT) geeignet, aber Historie zählt: NCBI beschreibt, dass RefSNPs früher teils als FWD/REV relativ zur Assembly geführt wurden und dass in der neueren dbSNP-Architektur die Allele konsistent „forward to the reported sequence“ (VCF/HGVS/SPDI-konform) berichtet werden; darum existieren auch spezielle VCFs für ehemals „REV“-gemeldete rsIDs. citeturn21view4turn13search8 Für robuste Allelvergleiche ist die korrekte Regel: **Allele auf denselben Build und dieselbe (Plus-)Orientierung normalisieren und erst dann vergleichen.**
+dbSNP is suitable as the primary source for rsID→(chr,pos,REF,ALT), but history matters: NCBI describes that RefSNPs were formerly sometimes reported as FWD/REV relative to the assembly and that in the newer dbSNP architecture, alleles are consistently reported "forward to the reported sequence" (VCF/HGVS/SPDI-compliant); therefore, special VCFs also exist for formerly "REV"-reported rsIDs. citeturn21view4turn13search8 For robust allele comparisons, the correct rule is: **Normalize alleles to the same build and the same (plus) orientation and only then compare.**
 
-ClinVar liefert Varianten u.a. als VCF über FTP; diese VCFs enthalten „simple alleles“ (<10kb) mit präzisen Endpunkten, gemappt auf GRCh37 oder GRCh38 (nicht alle ClinVar-Variantentypen sind im VCF). citeturn13search9turn13search17 Jede ClinVar-Aussage, die du anzeigst, muss daher (a) die richtige Assembly treffen und (b) deine Nutzerallele mit den in ClinVar referenzierten Allelen (REF/ALT bzw. CLNSIG-bezogene Allele) abgleichen.
+ClinVar delivers variants as VCF via FTP, among other formats; these VCFs contain "simple alleles" (<10kb) with precise endpoints, mapped to GRCh37 or GRCh38 (not all ClinVar variant types are included in the VCF). citeturn13search9turn13search17 Every ClinVar assertion you display must therefore (a) match the correct assembly and (b) compare your user alleles with the alleles referenced in ClinVar (REF/ALT or CLNSIG-related alleles).
 
-Die GWAS Catalog „Top Hits“-Dateien enthalten ein Feld „STRONGEST SNP-RISK ALLELE“ (SNP + Risiko-/Effektallel; „?“ falls unbekannt) sowie ein Feld „OR or BETA“ zum Effekt; für ältere Kurationen wurde OR<1 teils invertiert und das berichtete Allel entsprechend umgedreht, damit die gespeicherten ORs >1 sind. citeturn7search0turn16search0turn16search12 Daraus folgt: Du darfst Risikoallele nicht blind übernehmen, sondern musst die jeweilige Katalog-Logik (Datum/Version) und die Allelorientierung prüfen oder auf harmonisierte Summary-Stats ausweichen.
+The GWAS Catalog "Top Hits" files contain a field "STRONGEST SNP-RISK ALLELE" (SNP + risk/effect allele; "?" if unknown) as well as a field "OR or BETA" for the effect; for older curations, OR<1 was sometimes inverted and the reported allele flipped accordingly, so that stored ORs are >1. citeturn7search0turn16search0turn16search12 This means: You must not blindly adopt risk alleles, but instead must check the respective catalog logic (date/version) and allele orientation, or switch to harmonized summary stats.
 
-image_group{"layout":"carousel","aspect_ratio":"16:9","query":["Illumina TOP BOT strand diagram","Illumina Infinium manifest IlmnStrand SourceStrand explanation","palindromic SNP A/T C/G strand ambiguity diagram","SNP strand flip plus minus complement A T C G diagram"],"num_per_query":1}
+image_group{"layout":"carousel","aspect_ratio":"16:9","query":["Illumina TOP BOT strand diagram","Illumina Infinium manifest IlmnStrand SourceStrand explanation","palindromic SNP A/T C/G strand ambiguity diagram","SNP strand flip plus minus complement A T C G diagram"],"num_per_query":1}
 
-**Strang-/Allelnormalisierung: Referenz-Algorithmus (pseudocode)**  
-Kernprinzip: Der Vergleich erfolgt auf **(chr,pos,REF,ALT)** in einer festgelegten Assembly. rsID ist nur Lookup-Hilfe.
+**Strand/allele normalization: reference algorithm (pseudocode)**
+Core principle: The comparison is performed on **(chr,pos,REF,ALT)** in a defined assembly. rsID is only a lookup aid.
 
 ```pseudo
 # Inputs:
 #   user: (assembly, chr, pos, genotype="AG"/"--"/"A", provider_hint)
-#   refdb: (assembly, chr, pos, REF, ALTs[])  # aus dbSNP/VCF/FASTA verifiziert
-#   target_allele: ein Nukleotid (A/C/G/T) oder bei Indels eine Sequenz (VCF-ALT)
+#   refdb: (assembly, chr, pos, REF, ALTs[])  # verified from dbSNP/VCF/FASTA
+#   target_allele: a nucleotide (A/C/G/T) or for indels a sequence (VCF-ALT)
 
 function complement_base(b):
     map = { "A":"T", "T":"A", "C":"G", "G":"C" }
     return map[b]
 
 function is_palindromic_snp(REF, ALT):
-    # biallelic SNP palindromic wenn {A,T} oder {C,G}
+    # biallelic SNP is palindromic when {A,T} or {C,G}
     s = set([REF, ALT])
     return (s == {"A","T"} or s == {"C","G"})
 
 function normalize_user_alleles_to_plus(user, refdb):
-    # 1) Build/Koordinate muss schon refdb-assembly entsprechen (ggf. liftover vorher)
+    # 1) Build/coordinate must already match refdb assembly (liftover beforehand if needed)
     assert user.assembly == refdb.assembly
     allowed = set([refdb.REF] + refdb.ALTs)
 
@@ -47,37 +47,37 @@ function normalize_user_alleles_to_plus(user, refdb):
     if None in alleles:
         return {status:"missing_genotype"}
 
-    # 2) Direktmatch?
+    # 2) Direct match?
     if set(alleles) ⊆ allowed:
         return {status:"ok", oriented:"+", alleles:alleles}
 
     # 3) Reverse-complement match?
     comp = [complement_base(a) for a in alleles]
     if set(comp) ⊆ allowed:
-        # Ambiguität bei palindromischen SNPs: Flip nicht beweisbar ohne Zusatzinfo
+        # Ambiguity for palindromic SNPs: Flip not provable without additional info
         if len(refdb.ALTs)==1 and is_palindromic_snp(refdb.REF, refdb.ALTs[0]):
             return {status:"ambiguous_palindromic_strand"}
         return {status:"ok", oriented:"-", alleles:comp}
 
-    return {status:"allele_mismatch"}  # falsche Koordinate, falscher Build, multi-allelic, rsID-Merge, etc.
+    return {status:"allele_mismatch"}  # wrong coordinate, wrong build, multi-allelic, rsID merge, etc.
 
 function count_target_allele(alleles, target_allele):
-    # 0/1/2 Kopien für biallelic SNPs; bei multi-allelic analog
+    # 0/1/2 copies for biallelic SNPs; analogous for multi-allelic
     return sum(1 for a in alleles if a == target_allele)
 ```
 
-Dieses Schema ist minimal; in der Praxis kommen hinzu: multi-allele rsIDs, Indels, und die Notwendigkeit, **REF gegen Referenz-FASTA zu verifizieren** (oder REF/ALT direkt aus einem verlässlichen VCF zu übernehmen). citeturn12search2turn12search14turn13search8
+This schema is minimal; in practice, additional considerations include: multi-allele rsIDs, indels, and the need to **verify REF against a reference FASTA** (or to take REF/ALT directly from a reliable VCF). citeturn12search2turn12search14turn13search8
 
-**Palindromische SNPs (A/T, C/G): sichere Behandlung**  
-Bei A/T- oder C/G-SNPs ist „flip vs. nicht flip“ anhand der Allelmenge allein unentscheidbar. Das ist der klassische Fehlerbereich bei GWAS/Array-Datenharmonisierung. Werkzeuge wie **snpflip** markieren reverse/ambiguous SNPs, und **Genotype Harmonizer** kann ambige A/T und G/C SNPs über LD-Patterns gegen ein Referenzpanel ausrichten (in einem DTC-Local-Tool meist zu schwergewichtig; aber als Konzept wichtig). citeturn18search1turn18search7 Für Chip-spezifische Auflösung existieren außerdem kuratierte „strand and build files“ für viele Genotyping-Chips. citeturn18search22
+**Palindromic SNPs (A/T, C/G): safe handling**
+For A/T or C/G SNPs, "flip vs. no flip" is undecidable based on the allele set alone. This is the classic error domain in GWAS/array data harmonization. Tools such as **snpflip** flag reverse/ambiguous SNPs, and **Genotype Harmonizer** can align ambiguous A/T and G/C SNPs via LD patterns against a reference panel (in a DTC local tool usually too heavyweight; but important as a concept). citeturn18search1turn18search7 For chip-specific resolution, curated "strand and build files" also exist for many genotyping chips. citeturn18search22
 
-**Datenquellen/Implementierungsartefakte (konkret, maschinenlesbar)**  
+**Data sources/implementation artifacts (concrete, machine-readable)**
 ```text
 # DTC Strand/Build
 https://eu.customercare.23andme.com/hc/en-us/articles/115002090907-Raw-Genotype-Data-Technical-Details
 https://support.ancestry.com/articles/en_GB/Support_Site/Downloading-DNA-Data
 
-# Illumina Manifest/Strand-Definition
+# Illumina Manifest/Strand Definition
 https://knowledge.illumina.com/microarray/general/microarray-general-reference_material-list/000001565
 https://knowledge.illumina.com/microarray/general/microarray-general-reference_material-list/000001489
 https://www.illumina.com/documents/products/technotes/technote_topbot.pdf
@@ -90,74 +90,74 @@ https://pmc.ncbi.nlm.nih.gov/articles/PMC7523648/   # SPDI paper
 # ClinVar FTP Primer (VCF scope, GRCh37/38)
 https://www.ncbi.nlm.nih.gov/clinvar/docs/ftp_primer/
 
-# Strand-Resolution Tools / Chip-Strand-Files
+# Strand Resolution Tools / Chip Strand Files
 https://github.com/andymckenzie/snpflip
 https://pmc.ncbi.nlm.nih.gov/articles/PMC4307387/   # Genotype Harmonizer
 https://www.well.ox.ac.uk/~wrayner/strand/
 ```
-citeturn14search0turn14search1turn0search2turn18search0turn21view3turn21view4turn13search0turn13search8turn13search9turn18search1turn18search7turn18search22
+citeturn14search0turn14search1turn0search2turn18search0turn21view3turn21view4turn13search0turn13search8turn13search9turn18search1turn18search7turn18search22
 
-**Häufige Fallstricke (consumer-genomics-typisch)**  
-(1) rsID-basierte Anzeige von „Pathogenic/Risk“ ohne Allelvergleich produziert garantierte False Positives (dein aktueller Bug ist das Standardmuster). citeturn24view2turn21view4  
-(2) Build-Mix (GRCh37 vs GRCh38) verursacht scheinbare „Allele mismatch“ und falsche Annotationen; Liftover funktioniert zwar oft sehr gut, kann aber bei bestimmten Variantentypen/Regionen scheitern, daher muss „unmappable“ explizit behandelt werden. citeturn18search13turn13search8  
-(3) Palindromische SNPs ohne Zusatzinfo flippen → silent corruption von Risikoallelen. citeturn18search7turn18search1  
-(4) Illumina A/B-Allele oder TOP/BOT ungeprüft als A/C/G/T interpretieren. citeturn21view3turn18search0  
-(5) ClinVar-VCF als „vollständige ClinVar-Wahrheit“ verwenden (ist sie nicht; Teile liegen nur im XML/TXT-Full-Release). citeturn13search9turn13search17
+**Common pitfalls (typical for consumer genomics)**
+(1) rsID-based display of "Pathogenic/Risk" without allele comparison produces guaranteed false positives (your current bug is the standard pattern). citeturn24view2turn21view4
+(2) Build mix (GRCh37 vs GRCh38) causes apparent "allele mismatch" and incorrect annotations; liftover often works very well, but can fail for certain variant types/regions, so "unmappable" must be explicitly handled. citeturn18search13turn13search8
+(3) Palindromic SNPs flipped without additional info → silent corruption of risk alleles. citeturn18search7turn18search1
+(4) Illumina A/B alleles or TOP/BOT interpreted as A/C/G/T without validation. citeturn21view3turn18search0
+(5) Using ClinVar VCF as "complete ClinVar truth" (it is not; parts exist only in the XML/TXT full release). citeturn13search9turn13search17
 
-**Priorität (Patientensicherheit)**  
-Kritisch. Ohne korrekten Strang-/Allelabgleich sind alle nachfolgenden Kategorien (ClinVar, GWAS, PGx) potenziell systematisch falsch.
+**Priority (patient safety)**
+Critical. Without correct strand/allele matching, all subsequent categories (ClinVar, GWAS, PGx) are potentially systematically wrong.
 
-## PGx-Star-Allele-Calling und Phänotypisierung
+## PGx Star Allele Calling and Phenotyping
 
-**Wissenschaftlich korrekter Ansatz (CPIC/PharmVar-konform)**  
-Pharmakogenomische Phänotypen sind i.d.R. nicht „ein SNP → ein Phänotyp“, sondern **Haplotypen (Star Alleles) → Diplotyp → Funktion/Activity Score → Phänotyp → Drug-Guidance**. CPIC beschreibt explizit, dass die Kombination der Allele den Diplotyp (Genotyp) bestimmt und daraus Phänotypklassen abgeleitet werden; für CYP2C19 sind z.B. *1/*17 = Rapid und *17/*17 = Ultrarapid, während *2/*17 trotz *17 als Intermediate klassifiziert wird. citeturn21view0turn27search2
+**Scientifically correct approach (CPIC/PharmVar-compliant)**
+Pharmacogenomic phenotypes are generally not "one SNP → one phenotype", but rather **haplotypes (star alleles) → diplotype → function/activity score → phenotype → drug guidance**. CPIC explicitly describes that the combination of alleles determines the diplotype (genotype) and that phenotype classes are derived from it; for CYP2C19, for example, *1/*17 = Rapid and *17/*17 = Ultrarapid, while *2/*17 is classified as Intermediate despite *17. citeturn21view0turn27search2
 
-**Warum dein aktueller Ansatz zwangsläufig falsch ist:** rs12248560 ist ein Definierer für CYP2C19*17; ohne Allelvergleich und ohne Diplotyp-Logik wird *1/*1 fälschlich als „Ultrarapid“ etikettiert. PharmVar zeigt *17 als -806C>T (rs12248560) und listet die zugehörigen Kernvarianten. citeturn1search2turn21view0
+**Why your current approach is inevitably wrong:** rs12248560 is a definer for CYP2C19*17; without allele comparison and without diplotype logic, *1/*1 is falsely labeled as "Ultrarapid". PharmVar shows *17 as -806C>T (rs12248560) and lists the associated core variants. citeturn1search2turn21view0
 
-**Star-Allele-Definitionen: robuste Datenquellen statt Hardcoding**  
-Hardcoding von „ein paar bekannten rsIDs“ ist nicht wartbar und wird bei Updates der Star-Nomenklatur schnell falsch (Star-Definitionen sind dynamisch). citeturn15search17turn26search3 CPIC stellt dafür maschinenlesbare Tabellen bereit: **allele_definition**, **allele_functionality_reference**, **diplotype_phenotype**, **frequency**, **gene_cds**. citeturn27search4turn28search15 Das ist der richtige Pfad für ein lokales Tool: Tabellen versionieren, offline shippen, transparent updaten.
+**Star allele definitions: robust data sources instead of hardcoding**
+Hardcoding "a few known rsIDs" is not maintainable and quickly becomes incorrect when star nomenclature is updated (star definitions are dynamic). citeturn15search17turn26search3 CPIC provides machine-readable tables for this purpose: **allele_definition**, **allele_functionality_reference**, **diplotype_phenotype**, **frequency**, **gene_cds**. citeturn27search4turn28search15 This is the correct path for a local tool: version the tables, ship them offline, update transparently.
 
-**Konkrete, häufig verwendete Definierervarianten (Beispiele, nicht vollständig)**  
-Die folgenden Beispiele dienen als Einstieg/Validierung; produktiv sollte die Definition immer aus den CPIC/PharmVar-Tabellen kommen:
+**Concrete, commonly used definer variants (examples, not exhaustive)**
+The following examples serve as an entry point/validation; in production, the definition should always come from the CPIC/PharmVar tables:
 
-- CYP2C19: *17 rs12248560 (Promoter -806C>T), *2 rs4244285, *3 rs4986893. citeturn1search2turn21view0turn27search13  
-- CYP2C9: *2 rs1799853, *3 rs1057910. citeturn25search0turn25search5  
-- CYP3A5: *3 rs776746 (Splice-Defekt). citeturn25search6turn25search2  
-- DPYD: *2A rs3918290 (Splice-Defekt); CPIC arbeitet u.a. mit c.1905+1G>A, c.1679T>G, c.2846A>T, c.1129–5923C>G als zentralen Varianten für DPD-Aktivitätsabschätzung. citeturn25search7turn23view1  
-- SLCO1B1: *5 rs4149056 (c.521T>C; V174A). citeturn26search7turn23view2turn26search1  
-- TPMT: *3A (rs1800460 + rs1142345 in cis), *3B rs1800460, *3C rs1142345, *2 rs1800462; *3A ist ohne Phasing potentiell mehrdeutig. citeturn26search6turn26search0turn26search10turn26search4  
-- NUDT15: *3 rs116855232 (R139C). citeturn25search4turn25search20  
-- CYP2D6: sehr viele Allele (PharmVar nennt >130 Kernallele); einzelne Schlüsselvarianten (z.B. *4 rs3892097, *10 rs1065852) sind nur ein kleiner Teil, strukturelle Varianten (Deletion/Duplikation/Hybrid) sind klinisch relevant. citeturn26search3turn26search9turn21view2
+- CYP2C19: *17 rs12248560 (Promoter -806C>T), *2 rs4244285, *3 rs4986893. citeturn1search2turn21view0turn27search13
+- CYP2C9: *2 rs1799853, *3 rs1057910. citeturn25search0turn25search5
+- CYP3A5: *3 rs776746 (splice defect). citeturn25search6turn25search2
+- DPYD: *2A rs3918290 (splice defect); CPIC works with c.1905+1G>A, c.1679T>G, c.2846A>T, c.1129–5923C>G among others as central variants for DPD activity estimation. citeturn25search7turn23view1
+- SLCO1B1: *5 rs4149056 (c.521T>C; V174A). citeturn26search7turn23view2turn26search1
+- TPMT: *3A (rs1800460 + rs1142345 in cis), *3B rs1800460, *3C rs1142345, *2 rs1800462; *3A is potentially ambiguous without phasing. citeturn26search6turn26search0turn26search10turn26search4
+- NUDT15: *3 rs116855232 (R139C). citeturn25search4turn25search20
+- CYP2D6: very many alleles (PharmVar lists >130 core alleles); individual key variants (e.g., *4 rs3892097, *10 rs1065852) represent only a small part, structural variants (deletion/duplication/hybrid) are clinically relevant. citeturn26search3turn26search9turn21view2
 
-**Korrekte End-to-End-Logik (SNP-Genotyp → Star Alleles → Diplotyp → Activity Score → Phänotyp)**  
-Für ein lokales Consumer-Tool mit Array/VCF-Input ist die robuste Implementierung:
+**Correct end-to-end logic (SNP genotype → star alleles → diplotype → activity score → phenotype)**
+For a local consumer tool with array/VCF input, the robust implementation is:
 
-1) **Input harmonisieren**: Varianten auf eine Assembly bringen (GRCh37 oder GRCh38), Allele auf Plus-Strang normalisieren, REF gegen Referenz prüfen. citeturn14search0turn14search1turn12search2turn13search8  
-2) **Allele-Definition laden**: CPIC allele_definition_table für das Gen (Star-Allele als Variant-Kombinationen). citeturn27search0turn28search11  
-3) **Named-Alele-Matching**: Für jede Star-Definition prüfen, ob die Nutzer-Genotypdaten diese Haplotypdefinition zulassen (mit Missingness-Tracking). PharmCAT macht das als „Named Allele Matcher“ auf VCF-Input. citeturn1search5turn1search1turn1search13  
-4) **Diplotyp-Inferenz ohne Phasing**: Möglichkeitsraum aller Haplotyppaare bilden, die die (ungephaseten) Genotypcounts erklären; bei Mehrdeutigkeit „ambiguous call“ statt erzwungenem Ergebnis. citeturn26search0turn25search1  
-5) **Funktion + Activity Score**: CPIC allele_functionality_reference + diplotype_phenotype Tabellen verwenden. Für CYP2D6 wird pro Allel ein Aktivitätswert vergeben, bei Duplikationen multipliziert, dann summiert (Activity Score). citeturn21view2turn28search1turn28search0turn28search2  
-6) **Phänotyp & Drug Guidance**: Gen-spezifische CPIC-Empfehlungslogik/Tabellen; für viele Gene existieren CPIC „gene_cds“ Tabellen als strukturierte Entscheidungsunterstützung. citeturn27search6turn28search7turn23view1turn23view2turn31search0
+1) **Harmonize input**: Bring variants to one assembly (GRCh37 or GRCh38), normalize alleles to plus strand, verify REF against reference. citeturn14search0turn14search1turn12search2turn13search8
+2) **Load allele definitions**: CPIC allele_definition_table for the gene (star alleles as variant combinations). citeturn27search0turn28search11
+3) **Named allele matching**: For each star definition, check whether the user genotype data permit this haplotype definition (with missingness tracking). PharmCAT does this as a "Named Allele Matcher" on VCF input. citeturn1search5turn1search1turn1search13
+4) **Diplotype inference without phasing**: Form the possibility space of all haplotype pairs that explain the (unphased) genotype counts; in case of ambiguity, return "ambiguous call" instead of a forced result. citeturn26search0turn25search1
+5) **Function + activity score**: Use CPIC allele_functionality_reference + diplotype_phenotype tables. For CYP2D6, an activity value is assigned per allele, multiplied for duplications, then summed (activity score). citeturn21view2turn28search1turn28search0turn28search2
+6) **Phenotype & drug guidance**: Gene-specific CPIC recommendation logic/tables; for many genes, CPIC "gene_cds" tables exist as structured decision support. citeturn27search6turn28search7turn23view1turn23view2turn31search0
 
-**Pseudocode (diplotype + phenotype, datengetrieben)**  
+**Pseudocode (diplotype + phenotype, data-driven)**
 ```pseudo
-# datengetrieben: nicht hardcodieren, sondern CPIC-Tabellen laden
+# data-driven: do not hardcode, instead load CPIC tables
 
 function call_gene_pgx(sample_vcf, gene):
     defs  = load_cpic_allele_definitions(gene)        # allele_definition_table.xlsx
     func  = load_cpic_allele_function(gene)           # allele_functionality_reference.xlsx
     d2p   = load_cpic_diplotype_to_phenotype(gene)    # Diplotype_Phenotype_Table.xlsx
 
-    # 1) relevante Varianten extrahieren
+    # 1) extract relevant variants
     g = subset_variants(sample_vcf, defs.all_required_sites)
 
-    # 2) mögliche haplotypen bestimmen (kompatibel mit beobachteten Genotypen)
+    # 2) determine possible haplotypes (compatible with observed genotypes)
     possible_haplotypes = []
     for star in defs.star_alleles:
-        if star_is_compatible(star, g):   # berücksichtigt missingness + Konflikte
+        if star_is_compatible(star, g):   # accounts for missingness + conflicts
             possible_haplotypes.append(star)
 
-    # 3) diplotype enumerieren (ungephaset)
+    # 3) enumerate diplotypes (unphased)
     candidates = []
     for a in possible_haplotypes:
         for b in possible_haplotypes:
@@ -173,108 +173,108 @@ function call_gene_pgx(sample_vcf, gene):
         return {status:"ambiguous", diplotypes:best.list}
 
     diplotype = best.diplotype  # (a,b)
-    phenotype = d2p.lookup(diplotype)  # bevorzugt: CPIC Tabelle, nicht selbst rechnen
+    phenotype = d2p.lookup(diplotype)  # preferred: CPIC table, not self-computed
     return {status:"ok", diplotype:diplotype, phenotype:phenotype}
 ```
 
-**Missing SNPs: sichere Default-Regeln**  
-„Nicht getestet“ ist nicht „Wildtyp“. CPIC weist in mehreren Guidelines darauf hin, dass Genotyp-Only-Tests seltene/neu entdeckte Varianten nicht erfassen; daraus folgt: wenn definierende Sites fehlen, ist ein „Normal“ oft nicht ableitbar und muss als „Unklar/Indeterminate“ zurückgegeben werden. citeturn21view2turn23view0turn28search0 Praktisch: Für jedes Gen eine **Coverage-Metrik** ausgeben („X% der definierenden Sites für häufige Core-Allele beobachtet“), und Phänotyp nur ausgeben, wenn die CPIC-Tabellen den Call als determiniert erlauben. citeturn27search2turn28search2
+**Missing SNPs: safe default rules**
+"Not tested" is not "wildtype". CPIC points out in multiple guidelines that genotype-only tests do not capture rare/newly discovered variants; consequently: if defining sites are missing, "Normal" is often not derivable and must be returned as "Unclear/Indeterminate". citeturn21view2turn23view0turn28search0 In practice: Output a **coverage metric** for each gene ("X% of defining sites for common core alleles observed"), and only output a phenotype if the CPIC tables allow the call as determined. citeturn27search2turn28search2
 
-**CNVs / strukturelle Varianten (v.a. CYP2D6): harte Grenzen von Consumer-Arrays**  
-CYP2D6-Phänotyp hängt stark von Deletionen und Duplikationen („xN“) ab; CPIC beschreibt Deletion (*5) und Duplikationen explizit und dass Aktivitätswerte bei Mehrkopien multipliziert werden. citeturn21view2turn28search1 Viele Consumer-Arrays detektieren diese CNVs nicht zuverlässig; daher muss dein Tool für CYP2D6 standardmäßig einen **„CNV unknown“-Status** führen und keine Ultrarapid-Calls behaupten, wenn keine Kopienzahlinfo vorhanden ist. Tools wie Stargazer können prinzipiell auch mit SNP-Array-Daten arbeiten, aber CNV-Auflösung bleibt je nach Input limitiert; Aldy/Astrolabe sind primär auf Sequenzdaten und strukturelle Modelle ausgelegt. citeturn15search4turn15search3turn15search2
+**CNVs / structural variants (especially CYP2D6): hard limits of consumer arrays**
+CYP2D6 phenotype depends heavily on deletions and duplications ("xN"); CPIC describes deletion (*5) and duplications explicitly and that activity values are multiplied for multi-copy alleles. citeturn21view2turn28search1 Many consumer arrays do not reliably detect these CNVs; therefore, your tool must carry a **"CNV unknown" status** for CYP2D6 by default and must not claim Ultrarapid calls when no copy number information is available. Tools like Stargazer can in principle also work with SNP array data, but CNV resolution remains limited depending on input; Aldy/Astrolabe are primarily designed for sequence data and structural models. citeturn15search4turn15search3turn15search2
 
-**CPIC-Empfehlungen: hochrelevante Beispiele (datengetrieben referenzieren, nicht paraphrasieren)**  
-- CYP2C19–Clopidogrel: CPIC 2022 klassifiziert *1/*17 als Rapid, *17/*17 als Ultrarapid und *2/*17 als Intermediate; Therapieempfehlungen leiten daraus ab. citeturn21view0turn20view0  
-- DPYD–Fluoropyrimidine: CPIC nutzt DPYD Activity Score; Tabelle 2 gibt dosisreduzierte Startdosen für partielle DPD-Defizienz (z.B. 50% Reduktion bei bestimmten AS-Konstellationen) und betont Titration/Monitoring. citeturn23view1  
-- TPMT/NUDT15–Thiopurine: Table 1 ordnet Diplotypen zu Phänotypen, Empfehlungen reduzieren Startdosen je nach Kombinationsstatus und erlauben Dosisanpassung nach Myelosuppression. citeturn23view0  
-- SLCO1B1–Simvastatin: rs4149056 Genotyp wird in Phänotypklassen übersetzt; Empfehlungen vermeiden 80 mg und schlagen niedrigere Dosen oder Alternativstatin vor, besonders bei C-Allelen. citeturn23view2turn17search3  
-- CYP2D6–Codein/Tramadol: CPIC empfiehlt, Codein/Tramadol bei Ultrarapid nicht zu nutzen (Toxizitätsrisiko) und Alternativen bei Poor; die 2021-Opioid-Guideline formuliert das mit Activity-Score-Schwellen. citeturn31search0turn31search4
+**CPIC recommendations: highly relevant examples (reference data-driven, not paraphrased)**
+- CYP2C19–Clopidogrel: CPIC 2022 classifies *1/*17 as Rapid, *17/*17 as Ultrarapid, and *2/*17 as Intermediate; treatment recommendations are derived from this. citeturn21view0turn20view0
+- DPYD–Fluoropyrimidines: CPIC uses the DPYD Activity Score; Table 2 provides dose-reduced starting doses for partial DPD deficiency (e.g., 50% reduction for certain AS constellations) and emphasizes titration/monitoring. citeturn23view1
+- TPMT/NUDT15–Thiopurines: Table 1 maps diplotypes to phenotypes, recommendations reduce starting doses depending on combination status and allow dose adjustment based on myelosuppression. citeturn23view0
+- SLCO1B1–Simvastatin: rs4149056 genotype is translated into phenotype classes; recommendations avoid 80 mg and suggest lower doses or alternative statins, especially for C alleles. citeturn23view2turn17search3
+- CYP2D6–Codeine/Tramadol: CPIC recommends not using codeine/tramadol in Ultrarapid metabolizers (toxicity risk) and alternatives in Poor metabolizers; the 2021 opioid guideline formulates this with activity score thresholds. citeturn31search0turn31search4
 
-**Datenquellen/Implementierungsartefakte (CPIC „Full Tables“, maschinenlesbar)**  
+**Data sources/implementation artifacts (CPIC "Full Tables", machine-readable)**
 ```text
-# CPIC: CYP2C19 (Definition/Funktion/Diplotyp→Phänotyp)
+# CPIC: CYP2C19 (Definition/Function/Diplotype→Phenotype)
 https://files.cpicpgx.org/data/report/current/allele_definition/CYP2C19_allele_definition_table.xlsx
 https://files.cpicpgx.org/data/report/current/allele_function_reference/CYP2C19_allele_functionality_reference.xlsx
 https://files.cpicpgx.org/data/report/current/diplotype_phenotype/CYP2C19_Diplotype_Phenotype_Table.xlsx
 https://cpicpgx.org/gene/cyp2c19/
 
-# CPIC: CYP2D6 (Definition/Funktion/Diplotyp→Phänotyp)
+# CPIC: CYP2D6 (Definition/Function/Diplotype→Phenotype)
 https://files.cpicpgx.org/data/report/current/allele_definition/CYP2D6_allele_definition_table.xlsx
 https://files.cpicpgx.org/data/report/current/allele_function_reference/CYP2D6_allele_functionality_reference.xlsx
 https://files.cpicpgx.org/data/report/current/diplotype_phenotype/CYP2D6_Diplotype_Phenotype_Table.xlsx
 https://files.cpicpgx.org/data/report/current/gene_phenotype/CYP2D6_phenotypes.xlsx
 
-# PharmCAT (Referenzimplementierung)
+# PharmCAT (Reference Implementation)
 https://pharmcat.clinpgx.org/using/
 https://github.com/PharmGKB/PharmCAT-tutorial
 https://pmc.ncbi.nlm.nih.gov/articles/PMC10121724/
 ```
-citeturn27search0turn27search1turn27search2turn27search4turn28search11turn28search1turn28search0turn28search2turn1search1turn1search5turn1search13
+citeturn27search0turn27search1turn27search2turn27search4turn28search11turn28search1turn28search0turn28search2turn1search1turn1search5turn1search13
 
-**Häufige Fallstricke**  
-(1) „Absent in data“ als *1 interpretieren → falsche Normal-/Rapid-/Ultrarapid-Calls. citeturn23view0turn21view2  
-(2) TPMT*3A ohne Phasing erzwingen → falscher Diplotyp (cis/trans). citeturn26search0turn26search4  
-(3) CYP2D6 ohne CNV-Status als vollständig reporten → Hochrisiko-Fehleinschätzungen. citeturn21view2turn15search9  
-(4) Star-Definitions-Updates ignorieren → Drift zwischen Report und aktueller CPIC/PharmVar-Nomenklatur. citeturn15search17turn28search24
+**Common pitfalls**
+(1) Interpreting "absent in data" as *1 → false Normal/Rapid/Ultrarapid calls. citeturn23view0turn21view2
+(2) Forcing TPMT*3A without phasing → incorrect diplotype (cis/trans). citeturn26search0turn26search4
+(3) Reporting CYP2D6 as complete without CNV status → high-risk misassessments. citeturn21view2turn15search9
+(4) Ignoring star definition updates → drift between report and current CPIC/PharmVar nomenclature. citeturn15search17turn28search24
 
-**Priorität (Patientensicherheit)**  
-Hoch bis kritisch. Falsche PGx-Phänotypen können zu realer Medikamentenfehlsteuerung führen; FDA warnt explizit vor nicht validierten PGx-Claims und auch Software-Interpretationen im DTC-Kontext. citeturn30view0turn9search0
+**Priority (patient safety)**
+High to critical. Incorrect PGx phenotypes can lead to real medication mismanagement; the FDA explicitly warns against non-validated PGx claims and also software interpretations in the DTC context. citeturn30view0turn9search0
 
-## ClinVar-Pathogenität korrekt interpretieren
+## Correctly Interpreting ClinVar Pathogenicity
 
-**Wissenschaftlich korrekter Ansatz (nicht „contains pathogenic“)**
-ClinVar ist ein Archiv eingereichter Interpretationen (SCVs), aggregiert zu Varianten-/Varianten-Konditions-Records (VCV/RCV). citeturn32search12turn24view2 Seit 2024 trennt ClinVar klinische Klassifikationstypen (germline, somatic clinical impact, oncogenicity) in getrennte Felder; „clinical_significance“ muss daher kontextualisiert werden. citeturn24view2
+**Scientifically correct approach (not "contains pathogenic")**
+ClinVar is an archive of submitted interpretations (SCVs), aggregated into variant/variant-condition records (VCV/RCV). citeturn32search12turn24view2 Since 2024, ClinVar separates clinical classification types (germline, somatic clinical impact, oncogenicity) into separate fields; "clinical_significance" must therefore be contextualized. citeturn24view2
 
-Die korrekte Logik ist dreistufig:
+The correct logic has three stages:
 
-1) **Allele prüfen**: Nur wenn der Nutzer die in ClinVar klassifizierte(n) ALT-Allele trägt, ist die ClinVar-Klassifikation überhaupt genotypebezogen relevant (sonst „homozygous reference“/„kein Träger“). citeturn13search9turn21view4  
-2) **Klassifikationstyp + Term interpretieren**: ClinVar-Terms umfassen u.a. Pathogenic/Likely pathogenic/Benign/Likely benign/VUS sowie „risk factor“, „drug response“, „association/protective/other“. citeturn24view1turn24view2  
-3) **Evidenzqualität (Review Status/Stars) gewichten**: ClinVar definiert Stars/Review-Status: 4 = practice guideline, 3 = expert panel, 2 = multiple submitters/no conflicts, 1 = criteria provided (single submitter) oder criteria provided (conflicting), 0 = no criteria/no classification usw. citeturn24view0
+1) **Check alleles**: Only if the user carries the ALT allele(s) classified in ClinVar is the ClinVar classification genotype-relevant at all (otherwise "homozygous reference"/"non-carrier"). citeturn13search9turn21view4
+2) **Interpret classification type + term**: ClinVar terms include, among others, Pathogenic/Likely pathogenic/Benign/Likely benign/VUS as well as "risk factor", "drug response", "association/protective/other". citeturn24view1turn24view2
+3) **Weight evidence quality (review status/stars)**: ClinVar defines stars/review status: 4 = practice guideline, 3 = expert panel, 2 = multiple submitters/no conflicts, 1 = criteria provided (single submitter) or criteria provided (conflicting), 0 = no criteria/no classification, etc. citeturn24view0
 
-**Zuverlässigkeitsschwellen (sicherheitsorientiert, ClinVar-konform)**  
-Für ein Consumer-Tool ist eine konservative Policy notwendig:
+**Reliability thresholds (safety-oriented, ClinVar-compliant)**
+For a consumer tool, a conservative policy is necessary:
 
-- **Hochvertrauen**: 3–4 Sterne (Expert Panel/Practice Guideline). citeturn24view0turn32search5  
-- **Mittel**: 2 Sterne (mehrere Submitter, Kriterien, kein Konflikt). citeturn24view0  
-- **Niedrig/Informativ**: 1 Stern (Single submitter mit Kriterien) – anzeigen, aber deutlich als nicht-konsentiert kennzeichnen. citeturn24view0  
-- **Konfliktfall**: 1 Stern „criteria provided, conflicting classifications“ – nie als eindeutige Pathogenität ausgeben; stattdessen Konfliktstruktur anzeigen (wer sagt was, welcher Review-Status, welches Datum). citeturn24view0turn24view2  
-- **0 Sterne / no criteria**: nicht als klinische Aussage präsentieren; maximal als Rohhinweis. citeturn24view0
+- **High confidence**: 3-4 stars (Expert Panel/Practice Guideline). citeturn24view0turn32search5
+- **Medium**: 2 stars (multiple submitters, criteria, no conflict). citeturn24view0
+- **Low/Informational**: 1 star (single submitter with criteria) -- display, but clearly label as non-consensus. citeturn24view0
+- **Conflict case**: 1 star "criteria provided, conflicting classifications" -- never present as unambiguous pathogenicity; instead display the conflict structure (who says what, which review status, which date). citeturn24view0turn24view2
+- **0 stars / no criteria**: do not present as a clinical assertion; at most as a raw hint. citeturn24view0
 
-**Zygosität + Vererbung: korrekte, programmierbare Einbindung**  
-Genotyp (0/1/2 ALT-Kopien) ist für monogene Erkrankungen nur im Kontext der **Vererbung (AD/AR/X-linked/mitochondrial)** interpretierbar. Grundlagen zu Vererbungsmodi sind standardisiert (autosomal dominant/recessive, X-linked usw.). citeturn32search15 Programmtaugliche Quellen für „Mode of Inheritance“ (MOI):
+**Zygosity + inheritance: correct, programmable integration**
+Genotype (0/1/2 ALT copies) is interpretable for monogenic diseases only in the context of **inheritance (AD/AR/X-linked/mitochondrial)**. Fundamentals of inheritance modes are standardized (autosomal dominant/recessive, X-linked, etc.). citeturn32search15 Programmable sources for "Mode of Inheritance" (MOI):
 
-- ClinVar kann MOI auf Submission-Ebene enthalten; wenn Submitter MOI angibt, wird das auf Variantenseiten angezeigt. citeturn32search1turn24view2  
-- ClinVar „properties“ und Filterbegriffe enthalten MOI-Kategorien (moi autosomal dominant/recessive usw.). citeturn32search8  
-- MedGen unterstützt „mode of inheritance“ als Such-/Property-Feld und verarbeitet u.a. Orphanet/ORDO inklusive MOI. citeturn32search0turn32search4  
-- ClinGen Gene-Disease Validity Knowledge Base führt „Mode of Inheritance“ pro gene–disease Assertion und ist öffentlich einsehbar. citeturn2search19turn2search7
+- ClinVar can contain MOI at the submission level; when a submitter specifies MOI, it is displayed on variant pages. citeturn32search1turn24view2
+- ClinVar "properties" and filter terms contain MOI categories (moi autosomal dominant/recessive, etc.). citeturn32search8
+- MedGen supports "mode of inheritance" as a search/property field and processes, among others, Orphanet/ORDO including MOI. citeturn32search0turn32search4
+- ClinGen Gene-Disease Validity Knowledge Base maintains "Mode of Inheritance" per gene-disease assertion and is publicly accessible. citeturn2search19turn2search7
 
-**Korrekte ClinVar-Interpretationslogik (pseudocode, risikoarm)**  
+**Correct ClinVar interpretation logic (pseudocode, low-risk)**
 ```pseudo
 # Inputs:
 #   variant_call: {user_count_alt, genotype_quality, allele_normalized_ok}
 #   clinvar_records: list of RCV-like entries {condition_id, clinsig_term, review_status, last_eval_date, moi?}
 # Output:
-#   structured interpretation objects (nicht "Diagnose", sondern Variant-Hinweis)
+#   structured interpretation objects (not "diagnosis", but variant hint)
 
 function interpret_clinvar(variant_call, clinvar_records):
     if variant_call.allele_normalized_ok != true:
         return {status:"cannot_interpret_without_allele_match"}
 
     if variant_call.user_count_alt == 0:
-        return {status:"non_carrier"}  # keine ALT-/Risikoallel-Kopie
+        return {status:"non_carrier"}  # no ALT/risk allele copy
 
-    # filtere auf germline classification (nicht somatic clinical impact / oncogenicity)
+    # filter for germline classification (not somatic clinical impact / oncogenicity)
     records = filter_germline_records(clinvar_records)
 
-    # gewichtete Auswahl nach Review Status
-    # 4>3>2>1>0; Konfliktstatus separat
+    # weighted selection by review status
+    # 4>3>2>1>0; conflict status separate
     best = pick_by_highest_review_status(records)
 
-    # Wenn best "conflicting classifications": niemals binär entscheiden
+    # If best is "conflicting classifications": never decide binarily
     if best.review_status_contains("conflicting"):
         return {status:"conflicting", details: summarize_conflict(records)}
 
-    # clinsig-Terminologie korrekt behandeln
+    # correctly handle clinsig terminology
     if best.clinsig in {"Pathogenic","Likely pathogenic"}:
         return {status:"P_or_LP", zygosity:variant_call.user_count_alt, moi:best.moi, caveats:...}
     if best.clinsig in {"Benign","Likely benign"}:
@@ -285,12 +285,12 @@ function interpret_clinvar(variant_call, clinvar_records):
         return {status:"non_mendelian_or_pgx_term", ...}
 ```
 
-**ACMG/AMP-Framework: was es ist und wie es zu ClinVar passt**  
-ACMG/AMP (Richards et al., 2015) definiert die Standardterminologie (pathogenic/likely pathogenic/VUS/likely benign/benign) und evidenzbasierte Kriterien inkl. Populationsfrequenz-Regeln (BA1/BS1/PM2 etc.). citeturn2search2turn8search1turn8search5 ClinVar-Terms orientieren sich an dieser Terminologie, aber ClinVar ist kein eigener ACMG-Klassifikator; es aggregiert Submitter-Aussagen und gewichtet Aggregation u.a. nach Review-Status. citeturn24view2turn24view0 Die ClinVar-Star-Systematik ist daher **Evidenz-/Prozessqualität**, nicht ein formales Mapping auf ACMG-Kriterienerfüllung. citeturn24view0turn2search2
+**ACMG/AMP framework: what it is and how it relates to ClinVar**
+ACMG/AMP (Richards et al., 2015) defines the standard terminology (pathogenic/likely pathogenic/VUS/likely benign/benign) and evidence-based criteria including population frequency rules (BA1/BS1/PM2, etc.). citeturn2search2turn8search1turn8search5 ClinVar terms are aligned with this terminology, but ClinVar is not itself an ACMG classifier; it aggregates submitter assertions and weights aggregation based on review status, among other factors. citeturn24view2turn24view0 The ClinVar star system is therefore **evidence/process quality**, not a formal mapping to ACMG criteria fulfillment. citeturn24view0turn2search2
 
-**Datenquellen/Implementierungsartefakte**  
+**Data sources/implementation artifacts**
 ```text
-# ClinVar Doku: Review Status / Sterne, Klassifikationstypen, Termini
+# ClinVar Docs: Review Status / Stars, Classification Types, Terms
 https://www.ncbi.nlm.nih.gov/clinvar/docs/review_status/
 https://www.ncbi.nlm.nih.gov/clinvar/docs/clinsig/
 https://www.ncbi.nlm.nih.gov/clinvar/docs/properties/
@@ -303,60 +303,60 @@ https://pmc.ncbi.nlm.nih.gov/articles/PMC4544753/
 https://www.ncbi.nlm.nih.gov/medgen/docs/search/
 https://www.ncbi.nlm.nih.gov/medgen/docs/data/
 
-# ClinGen Gene-Disease Validity KB (MOI sichtbar)
+# ClinGen Gene-Disease Validity KB (MOI visible)
 https://search.clinicalgenome.org/
 ```
-citeturn24view0turn24view2turn24view1turn13search9turn2search2turn32search0turn32search4turn2search19
+citeturn24view0turn24view2turn24view1turn13search9turn2search2turn32search0turn32search4turn2search19
 
-**Häufige Fallstricke**  
-(1) „Pathogenic“ anzeigen trotz 0 Kopien ALT; das ist exakt dein rsID-only Bug. citeturn13search9turn24view1  
-(2) „Conflicting interpretations“ wie „Pathogenic“ behandeln; ClinVar unterscheidet Konflikte explizit im Review-Status. citeturn24view0turn24view1  
-(3) Somatische/onko-Klassifikation als germline „Pathogenic“ ausgeben; ClinVar trennt diese Klassifikationstypen. citeturn24view2  
-(4) MOI/zygosity ignorieren → AR-Erkrankungen fälschlich als erkrankt bei heterozygoter Trägerschaft. citeturn32search15turn32search0
+**Common pitfalls**
+(1) Displaying "Pathogenic" despite 0 copies of ALT; this is exactly your rsID-only bug. citeturn13search9turn24view1
+(2) Treating "Conflicting interpretations" as "Pathogenic"; ClinVar explicitly distinguishes conflicts in the review status. citeturn24view0turn24view1
+(3) Presenting somatic/oncogenicity classifications as germline "Pathogenic"; ClinVar separates these classification types. citeturn24view2
+(4) Ignoring MOI/zygosity → AR diseases falsely reported as affected in heterozygous carriers. citeturn32search15turn32search0
 
-**Priorität (Patientensicherheit)**  
-Kritisch. Mendelian „Pathogenic“-Labels ohne Allel- und Review-Status-Kontrolle sind der schnellste Weg zu hochschädlichen False Alarms.
+**Priority (patient safety)**
+Critical. Mendelian "Pathogenic" labels without allele and review status controls are the fastest path to highly harmful false alarms.
 
-## GWAS-Risikointerpretation und PRS
+## GWAS Risk Interpretation and PRS
 
-**Wissenschaftlich korrekter Ansatz (Single-Variant und Multi-Variant)**  
-GWAS-Top-Hits sind Assoziationen mit meist kleinen Effekten; korrekte Nutzer-Interpretation benötigt: (1) Effekt-/Risikoallel, (2) Effektgröße (OR oder Beta) bezogen auf dieses Allel, (3) Genotyp (0/1/2 Kopien), (4) ggf. Populationsfrequenzen und (5) Baseline-Prävalenz für absolute Risiken. citeturn7search0turn7search20turn37search1
+**Scientifically correct approach (single-variant and multi-variant)**
+GWAS top hits are associations with typically small effects; correct user interpretation requires: (1) effect/risk allele, (2) effect size (OR or beta) referenced to that allele, (3) genotype (0/1/2 copies), (4) population frequencies where applicable, and (5) baseline prevalence for absolute risks. citeturn7search0turn7search20turn37search1
 
-**Welche Allele im GWAS Catalog „Risiko“-Allele sind (und warum das heikel ist)**  
-In den kuratierten GWAS Catalog Top-Hits bezeichnet „STRONGEST SNP-RISK ALLELE“ die Variante plus Risiko-/Effektallel; „?“ wenn unbekannt. citeturn7search0turn7search2 Zusätzlich ist die Effektspalte „OR or BETA“ kontextabhängig; für vor Jan 2021 kuratierte Studien wurde OR<1 teils invertiert und das berichtete Allel entsprechend gedreht, damit OR>1 gespeichert wird. citeturn16search0turn16search12 Daraus folgt: Das „Risikoallel“ in Top-Hits ist nicht automatisch ein konsistent auf Plus-Strang harmonisiertes Effektallel in VCF-Sinn.
+**Which alleles in the GWAS Catalog are "risk" alleles (and why this is tricky)**
+In the curated GWAS Catalog top hits, "STRONGEST SNP-RISK ALLELE" denotes the variant plus risk/effect allele; "?" if unknown. citeturn7search0turn7search2 Additionally, the effect column "OR or BETA" is context-dependent; for studies curated before January 2021, OR<1 was sometimes inverted and the reported allele flipped accordingly, so that OR>1 is stored. citeturn16search0turn16search12 Consequently: The "risk allele" in top hits is not automatically a consistently plus-strand-harmonized effect allele in the VCF sense.
 
-Für robuste, skalierbare Interpretation sind harmonisierte Summary-Statistics (GWAS-SSF) vorzuziehen, da sie explizit **effect_allele/other_allele, effect size, SE, p** usw. erfassen und durch Pipelines harmonisiert werden können. citeturn7search8turn3search5turn7search5
+For robust, scalable interpretation, harmonized summary statistics (GWAS-SSF) are preferred, as they explicitly capture **effect_allele/other_allele, effect size, SE, p**, etc. and can be harmonized through pipelines. citeturn7search8turn3search5turn7search5
 
-**Genotyp → Risikoallel-Kopien (0/1/2): korrekte Logik**  
-Nach Strang-/Build-Normalisierung ist die GWAS-Seite analog zu ClinVar:
+**Genotype → risk allele copies (0/1/2): correct logic**
+After strand/build normalization, the GWAS side is analogous to ClinVar:
 
-- 0 Kopien Effektallel: Referenz für den (studien-)definierten Baselinevergleich.  
-- 1 Kopie: heterozygot.  
-- 2 Kopien: homozygot.  
+- 0 copies of effect allele: reference for the (study-)defined baseline comparison.
+- 1 copy: heterozygous.
+- 2 copies: homozygous.
 
-Dieses Zählen ist nur gültig, wenn Effektallel und Nutzerallele auf derselben Referenzorientierung liegen. citeturn18search7turn7search15turn7search5
+This counting is only valid if the effect allele and user alleles are on the same reference orientation. citeturn18search7turn7search15turn7search5
 
-**OR korrekt in personale (relative/absolute) Risikomaße übersetzen**  
-OR ist ein Odds-Verhältnis, nicht direkt „Risiko“. Für eine additive log-Odds-Annahme pro Effektallel gilt typischerweise: **Odds_multiplier = OR^k** (k = 0/1/2 Effektallele). citeturn7search20turn3search17 Für eine absolute Risikoapproximation brauchst du eine Baseline-Risikoannahme p0 (z.B. Prävalenz/Lebenszeitrisiko im Zielkollektiv): odds0 = p0/(1-p0); odds = odds0 * OR^k; p = odds/(1+odds). Die Beziehung OR↔RR hängt stark von p0 ab; bei hohen Baseline-Raten divergieren OR und RR stark. citeturn3search2turn3search10turn3search17 Ohne p0 ist „absolutes Risiko“ nicht seriös berechenbar.
+**Correctly translating OR into personal (relative/absolute) risk measures**
+OR is an odds ratio, not directly "risk". For an additive log-odds assumption per effect allele, the typical formula is: **Odds_multiplier = OR^k** (k = 0/1/2 effect alleles). citeturn7search20turn3search17 For an absolute risk approximation, you need a baseline risk assumption p0 (e.g., prevalence/lifetime risk in the target population): odds0 = p0/(1-p0); odds = odds0 * OR^k; p = odds/(1+odds). The relationship OR↔RR depends strongly on p0; at high baseline rates, OR and RR diverge substantially. citeturn3search2turn3search10turn3search17 Without p0, "absolute risk" cannot be seriously calculated.
 
-**Beta (quantitative Traits) anders behandeln als OR (binär)**  
-Beta ist ein additiver Effekt pro Effektallel auf der Trait-Skala (oder einer transformierten Skala), darum ist die naive Erwartungsverschiebung **ΔTrait ≈ beta * k**; zusätzlich braucht man Einheit/Skalierung und Populationsreferenz (Mittelwert/SD), um Patientenverständnis zu ermöglichen. citeturn3search5turn7search20
+**Beta (quantitative traits) treated differently from OR (binary)**
+Beta is an additive effect per effect allele on the trait scale (or a transformed scale), so the naive expected shift is **ΔTrait ≈ beta * k**; additionally, one needs unit/scaling and population reference (mean/SD) to enable patient understanding. citeturn3search5turn7search20
 
-**Reporting-Schwellen: was wissenschaftlich vertretbar ist (Consumer-Kontext)**  
-GWAS-Literatur betont die Notwendigkeit standardisierter Berichtsbestandteile (inkl. Allele/Strand/Effect sizes) und dass Mindestinformationen vorhanden sein müssen. citeturn7search20turn3search5 Für Consumer-Reporting ist als Minimalfilter vertretbar: nur Assoziationen mit genome-wide significance (klassisch p<5×10^-8) und klarer Effektalleldefinition; alles andere als „explorativ“ abwerten. citeturn7search20turn16search3 Effektgrößen sind oft klein; isolierte Single-SNP-Aussagen sind meist schwach prädiktiv. citeturn3search12turn3search18
+**Reporting thresholds: what is scientifically defensible (consumer context)**
+GWAS literature emphasizes the need for standardized reporting components (including alleles/strand/effect sizes) and that minimum information must be present. citeturn7search20turn3search5 For consumer reporting, a defensible minimum filter is: only associations with genome-wide significance (classically p<5x10^-8) and clear effect allele definition; everything else should be downgraded to "exploratory". citeturn7search20turn16search3 Effect sizes are often small; isolated single-SNP statements are usually weakly predictive. citeturn3search12turn3search18
 
-**Polygenic Risk Scores (PRS): Standardmethode und notwendige Metadaten**  
-Standard-PRS ist ein gewichteter Summenscore: **PRS = Σ (β_i * G_i)**, wobei G_i die Anzahl Effektallele ist. citeturn3search3turn3search18 Für interpretierbare Perzentile braucht man eine Referenzverteilung (Mean/SD) im passenden Ancestry-Kollektiv; ohne Referenz ist der Score ein roher Index ohne klinischen Maßstab. citeturn3search3turn7search7
+**Polygenic Risk Scores (PRS): standard method and required metadata**
+Standard PRS is a weighted sum score: **PRS = Σ (β_i * G_i)**, where G_i is the number of effect alleles. citeturn3search3turn3search18 For interpretable percentiles, a reference distribution (mean/SD) in the matching ancestry cohort is needed; without a reference, the score is a raw index without a clinical benchmark. citeturn3search3turn7search7
 
-**Ancestry-Transferabilität: zentrale Limitation**  
-GWAS/PRS-Übertragbarkeit ist populationsabhängig; viele GWAS stammen aus europäischen Kohorten, was zu schlechterer Performance in nicht-europäischen Gruppen führen kann. citeturn7search20turn3search18turn3search12
+**Ancestry transferability: central limitation**
+GWAS/PRS transferability is population-dependent; many GWAS originate from European cohorts, which can lead to poorer performance in non-European groups. citeturn7search20turn3search18turn3search12
 
-**Datenquellen/Implementierungsartefakte**  
+**Data sources/implementation artifacts**
 ```text
-# GWAS Catalog: Top Hits Felddefinitionen (Risikoallel, OR/BETA)
+# GWAS Catalog: Top Hits Field Definitions (Risk Allele, OR/BETA)
 https://www.ebi.ac.uk/gwas/docs/fileheaders
 
-# GWAS Summary Statistics Standards / Harmonisierung
+# GWAS Summary Statistics Standards / Harmonization
 https://pmc.ncbi.nlm.nih.gov/articles/PMC11526975/      # GWAS-SSF in GWAS Catalog
 https://www.sciencedirect.com/science/article/pii/S2666979X21000045  # Workshop/Standards
 https://github.com/EBISPOT/gwas-sumstats-harmoniser
@@ -364,34 +364,34 @@ https://github.com/EBISPOT/gwas-sumstats-harmoniser
 # PRS Best Practice
 https://pmc.ncbi.nlm.nih.gov/articles/PMC7612115/
 ```
-citeturn7search0turn7search8turn3search5turn7search15turn3search3
+citeturn7search0turn7search8turn3search5turn7search15turn3search3
 
-**Häufige Fallstricke**  
-(1) Risikoallel nicht gegen Nutzerallel zählen (dein aktueller Zustand) → alle Treffer werden fälschlich als „relevant“ gemeldet. citeturn7search0turn18search7  
-(2) OR aus Top-Hits ohne Beachtung der historischen Inversion/Allelswap interpretieren. citeturn16search0turn16search12  
-(3) OR als „absolutes Risiko“ ausgeben ohne Baseline p0 und ohne RR/OR-Unterschied zu erklären. citeturn3search2turn3search10  
-(4) GWAS-Effekte ohne Ancestry-Kontext anwenden. citeturn7search20turn3search18
+**Common pitfalls**
+(1) Not counting the risk allele against the user allele (your current state) → all hits are falsely reported as "relevant". citeturn7search0turn18search7
+(2) Interpreting OR from top hits without considering historical inversion/allele swap. citeturn16search0turn16search12
+(3) Presenting OR as "absolute risk" without baseline p0 and without explaining the RR/OR difference. citeturn3search2turn3search10
+(4) Applying GWAS effects without ancestry context. citeturn7search20turn3search18
 
-**Priorität (Patientensicherheit)**  
-Mittel bis hoch. Direkte medizinische Fehlsteuerung ist seltener als bei ClinVar/PGx, aber Falschinterpretation kann zu riskantem Verhalten und Fehlentscheidungen führen; PRS/Single-SNP sind in der klinischen Utility begrenzt. citeturn3search18turn11search19
+**Priority (patient safety)**
+Medium to high. Direct medical mismanagement is less common than with ClinVar/PGx, but misinterpretation can lead to risky behavior and poor decisions; PRS/single-SNP are limited in clinical utility. citeturn3search18turn11search19
 
-## Populationsfrequenzen sinnvoll nutzen
+## Using Population Frequencies Meaningfully
 
-**Wissenschaftlich korrekter Ansatz (ACMG/ClinGen-konform)**  
-Populationsallelfrequenzen sind zentral, um Pathogenität plausibel zu machen oder zu widerlegen. ACMG/AMP enthält explizite Frequenzkriterien; BA1 ist „stand-alone benign“ bei hoher Frequenz, BS1 ist „benign strong“ bei Frequenz höher als für die Erkrankung erwartet, während PM2 „absent/very rare in controls“ als pathogenitätsstützend nutzt. citeturn2search2turn8search1turn8search5 Eine aktualisierte BA1-Empfehlung präzisiert, dass BA1 bei AF>0.05 (5%) in einem geeigneten Referenzdatensatz angewendet werden kann. citeturn8search1
+**Scientifically correct approach (ACMG/ClinGen-compliant)**
+Population allele frequencies are central to making pathogenicity plausible or refuting it. ACMG/AMP contains explicit frequency criteria; BA1 is "stand-alone benign" at high frequency, BS1 is "benign strong" at frequency higher than expected for the disease, while PM2 uses "absent/very rare in controls" as supporting pathogenicity. citeturn2search2turn8search1turn8search5 An updated BA1 recommendation specifies that BA1 can be applied at AF>0.05 (5%) in an appropriate reference dataset. citeturn8search1
 
-**Welche Frequenzzahl ist die richtige? (global vs ancestry-matched, popmax)**  
-Für Filtering und Plausibilitätschecks wird empfohlen, **popmax** zu verwenden (Maximum der Kontinentalpopulationen), weil eine Variante, die in einer Population häufig ist, i.d.R. nicht als hochpenetrant-mendeliansch krankheitsverursachend gelten kann. citeturn8search0 gnomAD selbst nutzt/erklärt Populationskategorien und stellt pro Population AF bereit. citeturn8search2turn8search6
+**Which frequency number is the right one? (global vs ancestry-matched, popmax)**
+For filtering and plausibility checks, it is recommended to use **popmax** (maximum across continental populations), because a variant that is common in one population generally cannot be considered highly penetrant Mendelian disease-causing. citeturn8search0 gnomAD itself uses/explains population categories and provides AF per population. citeturn8search2turn8search6
 
-**Wie Frequenzen in deine Pipeline gehören (konkret)**  
-1) ClinVar P/LP nur dann als „hochrelevant“ klassifizieren, wenn popmax unter krankheitsspezifischen Schwellen liegt; bei sehr hoher Frequenz automatisch „Penetranz niedrig / Klassifikation fraglich / re-evaluate“ markieren. citeturn8search0turn8search5turn2search2  
-2) Bei GWAS: Frequenzen sind notwendig, um Baseline-/Genotypverteilungen korrekt zu modellieren (insb. wenn absolute Risiken approximiert werden). citeturn7search20turn3search2  
-3) Bei PGx: Frequenz-/Ancestry-Kontext ist relevant, weil relevante Allele je nach Population stark variieren; CPIC stellt hierfür Frequency Tables bereit. citeturn27search3turn28search24
+**How frequencies belong in your pipeline (concrete)**
+1) Only classify ClinVar P/LP as "highly relevant" when popmax is below disease-specific thresholds; at very high frequency, automatically mark as "penetrance low / classification questionable / re-evaluate". citeturn8search0turn8search5turn2search2
+2) For GWAS: frequencies are necessary to correctly model baseline/genotype distributions (especially when approximating absolute risks). citeturn7search20turn3search2
+3) For PGx: frequency/ancestry context is relevant because relevant alleles vary strongly by population; CPIC provides frequency tables for this purpose. citeturn27search3turn28search24
 
-**Ancestry-Inferenz lokal: vorsichtig, aber möglich**  
-PCA-/Admixture-basierte Methoden sind Standard zur genetischen Ancestry-Beschreibung, aber es gibt bekannte Missbrauchs- und Fehlinterpretationsrisiken; insbesondere dürfen solche Tools nicht als historische/ethnische Aussagen missverstanden werden. citeturn8search7turn8search3 Für ein privacy-first Tool ist die technisch saubere Variante: rein statistische „gnomAD-superpopulation nearest“ Auswahl zur Frequenzanzeige, ohne identitätsnahe Labels, und immer mit „uncertain“ Option.
+**Local ancestry inference: cautious, but possible**
+PCA/admixture-based methods are standard for genetic ancestry description, but there are known risks of misuse and misinterpretation; in particular, such tools must not be misunderstood as historical/ethnic statements. citeturn8search7turn8search3 For a privacy-first tool, the technically clean approach is: purely statistical "gnomAD superpopulation nearest" selection for frequency display, without identity-adjacent labels, and always with an "uncertain" option.
 
-**Datenquellen/Implementierungsartefakte**  
+**Data sources/implementation artifacts**
 ```text
 # ACMG/AMP + BA1 Update
 https://pmc.ncbi.nlm.nih.gov/articles/PMC4544753/
@@ -404,42 +404,42 @@ https://pmc.ncbi.nlm.nih.gov/articles/PMC9160216/
 https://gnomad.broadinstitute.org/news/2017-02-the-genome-aggregation-database/
 https://gnomad-sg.org/help/ancestry
 ```
-citeturn2search2turn8search1turn8search0turn8search2turn8search6
+citeturn2search2turn8search1turn8search0turn8search2turn8search6
 
-**Häufige Fallstricke**  
-(1) Frequenzen nur anzeigen, aber nicht in die Interpretation integrieren → ClinVar-Falschpositive bleiben ungefiltert. citeturn8search0turn2search2  
-(2) Globale AF statt popmax/ancestry-matched verwenden → falsche Aussagen bei population-spezifischen Varianten. citeturn8search0turn8search6  
-(3) BA1 stumpf als „>5% = benign“ implementieren ohne Krankheitskontext; ClinGen/ACMG betonen krankheitsspezifische Schwellen. citeturn8search5turn8search1
+**Common pitfalls**
+(1) Only displaying frequencies but not integrating them into the interpretation → ClinVar false positives remain unfiltered. citeturn8search0turn2search2
+(2) Using global AF instead of popmax/ancestry-matched → incorrect assertions for population-specific variants. citeturn8search0turn8search6
+(3) Implementing BA1 bluntly as ">5% = benign" without disease context; ClinGen/ACMG emphasize disease-specific thresholds. citeturn8search5turn8search1
 
-**Priorität (Patientensicherheit)**  
-Hoch. Frequenzlogik ist ein primärer Schutz gegen „Pathogenic“-Überinterpretation von häufigen Varianten und against overcalling bei DTC-Rohdaten. citeturn8search1turn33search2
+**Priority (patient safety)**
+High. Frequency logic is a primary defense against "Pathogenic" overinterpretation of common variants and against overcalling in DTC raw data. citeturn8search1turn33search2
 
-## Verantwortungsvolle Ergebnisdarstellung und Regulatorik
+## Responsible Results Presentation and Regulatory Compliance
 
-**Wissenschaftlich korrekter Ansatz (Risiko- und Compliance-getrieben)**  
-Ein nicht-klinisches Interpretationstool muss strikt zwischen (a) „Informationsdarstellung“ und (b) „medizinischer Empfehlung“ trennen. Dies ist nicht nur ethisch, sondern regulatorisch relevant: Die FDA warnte öffentlich, dass viele PGx-Testclaims (inkl. direkt an Konsumenten vermarkteter Tests und Software-Interpretationen) nicht von der FDA geprüft sind und wissenschaftlich unzureichend gestützt sein können; Therapieänderungen auf Basis solcher Claims können Patientenschaden verursachen. citeturn30view0turn9search0
+**Scientifically correct approach (risk- and compliance-driven)**
+A non-clinical interpretation tool must strictly separate (a) "information presentation" from (b) "medical recommendation". This is not only ethical but regulatory relevant: the FDA publicly warned that many PGx test claims (including tests and software interpretations marketed directly to consumers) have not been reviewed by the FDA and may be insufficiently supported scientifically; therapy changes based on such claims can cause patient harm. citeturn30view0turn9search0
 
-**FDA-Regelwerk / Labeling-Logik (relevant für DTC-nahe Reports)**  
-21 CFR Part 809 beschreibt Labeling-Anforderungen für In-vitro-Diagnostika; 21 CFR 809.10 verlangt u.a. Angaben zu intended use, limitations und performance characteristics. citeturn9search1turn9search9 Eine FDA-Schulung 2024 zu 809.10(b) betont, dass Labeling konsistente Kerninformationen liefern soll (intended use, limitations/warnings, performance) und dass diese Elemente auch in Testreport-Templates abgebildet werden können. citeturn30view1turn9search5
+**FDA regulatory framework / labeling logic (relevant for DTC-adjacent reports)**
+21 CFR Part 809 describes labeling requirements for in vitro diagnostics; 21 CFR 809.10 requires, among other things, information on intended use, limitations, and performance characteristics. citeturn9search1turn9search9 An FDA training in 2024 on 809.10(b) emphasizes that labeling should provide consistent core information (intended use, limitations/warnings, performance) and that these elements can also be reflected in test report templates. citeturn30view1turn9search5
 
-**FDA und Pharmakogenetik: sichere Referenzpunkte**  
-Die FDA führt eine „Table of Pharmacogenetic Associations“ (informativ, nicht automatisch ein DTC-Freifahrtschein) und wiederholt darin, dass Genotyping klinische Vigilanz und Patientenmanagement nicht ersetzt. citeturn19search2 Das ist als Template für Safety-Language in einem Tool nützlich: PGx ist kontextabhängig und nicht absolut.
+**FDA and pharmacogenetics: safe reference points**
+The FDA maintains a "Table of Pharmacogenetic Associations" (informational, not automatically a DTC free pass) and reiterates therein that genotyping does not replace clinical vigilance and patient management. citeturn19search2 This is useful as a template for safety language in a tool: PGx is context-dependent and not absolute.
 
-**Disclaimers: wie etablierte Dienste die Grenze ziehen (Belege)**  
-- Nebula formuliert explizit „informational/educational only“, „not intended for diagnostic purpose“, „no medical advice“. citeturn10search1turn10search5  
-- SelfDecode beschreibt, dass das Produkt nicht zur Diagnose/Behandlung gedacht ist und keine medizinischen Entscheidungen daraus abgeleitet werden sollen. citeturn10search6  
-Solche Disclaimers sind notwendig, aber nicht hinreichend: Ohne korrekte Allel- und Qualitätslogik bleibt der Output gefährlich.
+**Disclaimers: how established services draw the line (evidence)**
+- Nebula explicitly states "informational/educational only", "not intended for diagnostic purpose", "no medical advice". citeturn10search1turn10search5
+- SelfDecode describes that the product is not intended for diagnosis/treatment and that no medical decisions should be derived from it. citeturn10search6
+Such disclaimers are necessary but not sufficient: without correct allele and quality logic, the output remains dangerous.
 
-**Warum „klinische Bestätigung“ zwingend in die UI gehört**  
-Eine Studie zu klinischer Bestätigung von DTC-Rohdatenvarianten fand, dass ein großer Anteil der in DTC-Rohdaten berichteten Varianten in klinischer Bestätigung falsch-positiv war und dass einige als „increased risk“ markierte Varianten klinisch als benign klassifiziert wurden; die Autoren betonen die Notwendigkeit klinischer Bestätigungstests. citeturn33search2turn9search7 Das ist ein direktes Argument für UI-Flags: „Rohdaten sind nicht klinisch validiert; Bestätigung in einem qualifizierten Labor erforderlich.“
+**Why "clinical confirmation" must be part of the UI**
+A study on clinical confirmation of DTC raw data variants found that a large proportion of variants reported in DTC raw data were false positives upon clinical confirmation and that some variants marked as "increased risk" were clinically classified as benign; the authors emphasize the necessity of clinical confirmation testing. citeturn33search2turn9search7 This is a direct argument for UI flags: "Raw data are not clinically validated; confirmation in a qualified laboratory is required."
 
-**Kommunikation an Nicht-Expert:innen: evidenzbasierte Report-Formate**  
-Patientenfreundliche Reports profitieren von prominentem Ergebnis-Summary in verständlicher Sprache und klaren Interpretationsabschnitten; Fachliteratur empfiehlt explizit strukturierte, klare Darstellung, um Fehlinterpretation zu reduzieren. citeturn19search0turn19search17turn19search3 ClinGen stellt zudem Kommunikations-/Consent-Frameworks (z.B. CADRe) bereit, die Disclosure-Strategien strukturieren. citeturn19search12
+**Communication to non-experts: evidence-based report formats**
+Patient-friendly reports benefit from a prominent results summary in understandable language and clear interpretation sections; the academic literature explicitly recommends structured, clear presentation to reduce misinterpretation. citeturn19search0turn19search17turn19search3 ClinGen also provides communication/consent frameworks (e.g., CADRe) that structure disclosure strategies. citeturn19search12
 
-**High-impact Findings separat flaggen (und warum)**  
-Für sehr folgenreiche, medizinisch „actionable“ Gene/Krankheitsbilder existiert in der klinischen Genomik die ACMG Secondary Findings (SF) Policy mit kuratierten Listen (z.B. SF v3.2, v3.3) als Rahmen für verantwortungsvolle Rückgabe in klinischen Sequenzierungen. citeturn33search14turn33search1 Für ein Consumer-Tool folgt daraus eine Safety-Policy: **wenn** (und nur wenn) eine Variante nach (i) Allelmatch, (ii) hoher ClinVar-Review-Qualität, (iii) Frequenzplausibilität, und (iv) plausibler Vererbung/Genotyp-Konstellation als hochrelevant erscheint, muss sie als „High impact, confirm clinically“ ausgegeben werden, nicht als Diagnose. Die DTC-Falschpositiv-Daten stützen diese Härte. citeturn33search2turn8search1turn24view0
+**Flagging high-impact findings separately (and why)**
+For highly consequential, medically "actionable" genes/conditions, clinical genomics has the ACMG Secondary Findings (SF) policy with curated lists (e.g., SF v3.2, v3.3) as a framework for responsible return in clinical sequencing. citeturn33search14turn33search1 For a consumer tool, this implies a safety policy: **if** (and only if) a variant appears highly relevant after (i) allele match, (ii) high ClinVar review quality, (iii) frequency plausibility, and (iv) plausible inheritance/genotype constellation, it must be output as "High impact, confirm clinically", not as a diagnosis. The DTC false-positive data support this rigor. citeturn33search2turn8search1turn24view0
 
-**Datenquellen/Implementierungsartefakte**  
+**Data sources/implementation artifacts**
 ```text
 # FDA Warnings / Enforcement
 https://www.fda.gov/media/125467/download
@@ -458,36 +458,36 @@ https://www.nature.com/articles/gim201838
 # Patient-friendly report design
 https://pmc.ncbi.nlm.nih.gov/articles/PMC4254435/
 ```
-citeturn30view0turn9search0turn9search1turn9search9turn19search2turn33search2turn19search0
+citeturn30view0turn9search0turn9search1turn9search9turn19search2turn33search2turn19search0
 
-**Häufige Fallstricke**  
-(1) Disclaimers als Ersatz für technische Korrektheit behandeln. citeturn30view0turn33search2  
-(2) PGx als „automatische Dosierungsanweisung“ ohne Kontext präsentieren; FDA warnt vor nicht validierten Claims. citeturn30view0turn19search2  
-(3) High-impact Varianten wie normale „Info“-Treffer darstellen statt als „confirm clinically“. citeturn33search2turn33search14
+**Common pitfalls**
+(1) Treating disclaimers as a substitute for technical correctness. citeturn30view0turn33search2
+(2) Presenting PGx as "automatic dosing instructions" without context; the FDA warns against non-validated claims. citeturn30view0turn19search2
+(3) Displaying high-impact variants like normal "info" hits instead of as "confirm clinically". citeturn33search2turn33search14
 
-**Priorität (Patientensicherheit)**  
-Kritisch. Dieser Bereich entscheidet, ob ein technisch korrektes Tool klinisch missbraucht wird.
+**Priority (patient safety)**
+Critical. This area determines whether a technically correct tool is clinically misused.
 
-## Referenzimplementierungen und Best Practices
+## Reference Implementations and Best Practices
 
-**Wissenschaftlich korrekter Ansatz: aus Referenztools ableiten, nicht neu erfinden**  
-Für PGx ist PharmCAT die Referenzimplementierung: PharmCAT akzeptiert VCF/„outside call“, identifiziert PGx-Genotypen, inferiert Star-Allele und erzeugt Reports mit Guideline-Empfehlungen (CPIC/DPWG); es besteht aus einem Preprocessor und einem Named Allele Matcher. citeturn1search1turn1search13turn1search5 Daraus ist die direkte Architekturableitung: (a) VCF-normalisieren, (b) named-allele matching datengetrieben aus Tabellen, (c) report generation strikt getrennt von matching.
+**Scientifically correct approach: derive from reference tools, do not reinvent**
+For PGx, PharmCAT is the reference implementation: PharmCAT accepts VCF/"outside call", identifies PGx genotypes, infers star alleles, and generates reports with guideline recommendations (CPIC/DPWG); it consists of a preprocessor and a Named Allele Matcher. citeturn1search1turn1search13turn1search5 From this, the direct architectural derivation follows: (a) VCF normalization, (b) named allele matching data-driven from tables, (c) report generation strictly separated from matching.
 
-Für generische Variant Annotation (ClinVar, gnomAD, eigene Tabellen) sind etablierte Annotatoren relevant:
+For generic variant annotation (ClinVar, gnomAD, custom tables), established annotators are relevant:
 
-- OpenCRAVAT ist modular, lokal betreibbar und pipeline-fähig. citeturn12search5turn12search1  
-- Ensembl VEP dokumentiert sehr konkret, wie VCF-Einträge intern normalisiert/trimmed werden und dass Allelvergleich optional deaktiviert werden kann („don’t compare alleles“), was als Warnsignal dient: „colocated rsID“ ist nicht automatisch derselbe Allelzustand. citeturn12search7turn12search11  
-- GA4GH VRS definiert Normalisierung als kanonische Repräsentation zur System-übergreifenden Vergleichbarkeit. citeturn12search0turn12search8
+- OpenCRAVAT is modular, can be run locally, and is pipeline-capable. citeturn12search5turn12search1
+- Ensembl VEP documents very concretely how VCF entries are internally normalized/trimmed and that allele comparison can optionally be disabled ("don't compare alleles"), which serves as a warning signal: "colocated rsID" is not automatically the same allele state. citeturn12search7turn12search11
+- GA4GH VRS defines normalization as a canonical representation for cross-system comparability. citeturn12search0turn12search8
 
-**GA4GH/VCF-Normalisierung: was zwingend ist und wann**  
-Variation Normalization (VRS) zielt auf kanonische Formen, um „äquivalente“ Varianten eindeutig zu machen. citeturn12search0turn12search4 Für VCFs sind klassische Schritte: (i) Multi-allelic split, (ii) REF-Check gegen FASTA, (iii) left-alignment von Indels in repetitiven Regionen, (iv) trimming gemeinsamer Basen; bcftools norm ist der de-facto Standard-Utility für solche Operationen. citeturn12search2turn12search14turn12search7
+**GA4GH/VCF normalization: what is mandatory and when**
+Variation Normalization (VRS) aims at canonical forms to make "equivalent" variants unambiguous. citeturn12search0turn12search4 For VCFs, the classic steps are: (i) multi-allelic split, (ii) REF check against FASTA, (iii) left-alignment of indels in repetitive regions, (iv) trimming of shared bases; bcftools norm is the de facto standard utility for such operations. citeturn12search2turn12search14turn12search7
 
-Für reine SNP-Array-Genotypen sind left-alignment/trimming selten relevant (weil meist SNVs), aber spätestens wenn du aus Arraydaten VCF erzeugst oder echte VCFs ingestierst, muss Normalisierung Teil der Standardpipeline sein. citeturn1search1turn12search2turn12search0
+For pure SNP array genotypes, left-alignment/trimming is rarely relevant (because they are mostly SNVs), but as soon as you generate VCF from array data or ingest actual VCFs, normalization must be part of the standard pipeline. citeturn1search1turn12search2turn12search0
 
-**ClinVar-Daten: VCF vs Full Release**  
-ClinVar-FTP primer stellt klar, dass ClinVar-VCF nur bestimmte Variantentypen (simple alleles, <10kb, präzise) umfasst; eine „vollständige“ ClinVar-Abdeckung kann Full Release (XML/TXT) erfordern. citeturn13search9turn13search17 Für ein lokales Consumer-Tool ist VCF oft ausreichend, aber die Limitations müssen UI-seitig sichtbar sein („coverage limitations“).
+**ClinVar data: VCF vs Full Release**
+The ClinVar FTP primer makes clear that ClinVar VCF covers only certain variant types (simple alleles, <10kb, precise); "complete" ClinVar coverage may require the Full Release (XML/TXT). citeturn13search9turn13search17 For a local consumer tool, VCF is often sufficient, but the limitations must be visible in the UI ("coverage limitations").
 
-**Best-Practice-Pipeline (kompakt, implementierbar)**  
+**Best-practice pipeline (compact, implementable)**
 ```pseudo
 ingest(file):
   detect_provider_and_build(file)             # DTC header / heuristics
@@ -508,12 +508,12 @@ annotate_gwas():
 
 annotate_pgx():
   build_vcf_subset_for_pgx_sites
-  run_named_allele_matching_datengetrieben (PharmCAT-like)
+  run_named_allele_matching_data_driven (PharmCAT-like)
   output_diplotype + phenotype + guideline pointers
   carry_forward "missing sites" + "CNV unknown" flags
 ```
 
-**Datenquellen/Implementierungsartefakte**  
+**Data sources/implementation artifacts**
 ```text
 # PharmCAT
 https://pharmcat.clinpgx.org/using/
@@ -532,13 +532,13 @@ https://vrs.ga4gh.org/en/1.2/impl-guide/normalization.html
 # bcftools norm
 https://samtools.github.io/bcftools/bcftools.html
 ```
-citeturn1search1turn1search5turn1search13turn12search5turn12search7turn12search0turn12search2
+citeturn1search1turn1search5turn1search13turn12search5turn12search7turn12search0turn12search2
 
-**Häufige Fallstricke**  
-(1) Annotator-Output (rsID co-location) als identische Allele behandeln; VEP dokumentiert explizit, dass Allelvergleich eine eigene Entscheidung ist, nicht implizit sicher. citeturn12search11turn12search7  
-(2) PGx als „regelbasiertes Hardcoding“ statt datengetriebener Tabellen (CPIC xlsx) implementieren → Update-Drift. citeturn27search0turn28search24  
-(3) ClinVar-VCF als vollständig ansehen → Coverage-Lücken. citeturn13search9turn13search17  
-(4) Normalisierung/REF-Check überspringen → stille Mismatches bei Indels/Repeats. citeturn12search2turn12search0
+**Common pitfalls**
+(1) Treating annotator output (rsID co-location) as identical alleles; VEP explicitly documents that allele comparison is a separate decision, not implicitly safe. citeturn12search11turn12search7
+(2) Implementing PGx as "rule-based hardcoding" instead of data-driven tables (CPIC xlsx) → update drift. citeturn27search0turn28search24
+(3) Treating ClinVar VCF as complete → coverage gaps. citeturn13search9turn13search17
+(4) Skipping normalization/REF check → silent mismatches for indels/repeats. citeturn12search2turn12search0
 
-**Priorität (Patientensicherheit)**  
-Hoch. Referenzarchitekturen (PharmCAT, VEP/VRS-Normalisierung) liefern die sichersten Blaupausen, um die Hauptklassen von Silent-Failure (Allel-/Strang-/Repräsentationsmismatch) zu vermeiden. citeturn1search13turn12search0turn12search11
+**Priority (patient safety)**
+High. Reference architectures (PharmCAT, VEP/VRS normalization) provide the safest blueprints for avoiding the main classes of silent failure (allele/strand/representation mismatch). citeturn1search13turn12search0turn12search11

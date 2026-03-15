@@ -46,13 +46,13 @@ A user heterozygous for **CFTR p.F508del** (the most common CF mutation):
 
 ## Scientific Requirement
 
-From the research report (Section: ClinVar-Pathogenität korrekt interpretieren):
+From the research report (Section: Correctly Interpreting ClinVar Pathogenicity):
 
-> Genotyp (0/1/2 ALT-Kopien) ist für monogene Erkrankungen nur im Kontext der
-> **Vererbung (AD/AR/X-linked/mitochondrial)** interpretierbar.
+> Genotype (0/1/2 ALT copies) is only interpretable for monogenic disorders in the context of
+> **inheritance (AD/AR/X-linked/mitochondrial)**.
 
-> MOI/zygosity ignorieren → AR-Erkrankungen fälschlich als erkrankt bei heterozygoter
-> Trägerschaft.
+> Ignoring MOI/zygosity → autosomal recessive disorders falsely reported as affected in
+> heterozygous carriers.
 
 Programmable MOI data sources identified by the research:
 - ClinVar submissions may contain MOI

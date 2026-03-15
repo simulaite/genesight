@@ -15,10 +15,10 @@ principle as a security issue.
 If you discover a security vulnerability, please report it responsibly. **Do not open a
 public GitHub issue for security vulnerabilities.**
 
-You have two options:
+Please contact us directly:
 
-1. **Email:** Send details to [security@genesight.dev](mailto:security@genesight.dev).
-2. **GitHub Security Advisory:** Use the [private security advisory](https://github.com/simulaite/genesight/security/advisories/new) feature on the repository.
+- **Email:** [info@simulaite.ai](mailto:info@simulaite.ai)
+- **GitHub Security Advisory:** Use the [private security advisory](https://github.com/simulaite/genesight/security/advisories/new) feature on the repository.
 
 Include as much of the following as you can:
 
@@ -60,3 +60,14 @@ The following are generally not treated as security issues:
 
 If you are unsure whether something qualifies, please report it anyway. We would rather
 review a non-issue than miss a real vulnerability.
+
+## Contact
+
+**STONKS GmbH**
+Buber-Neumann-Weg 68
+60439 Frankfurt am Main
+
+Managing Director: Farschad Hoshiar
+
+Tel.: +49 69 4080 9836
+E-Mail: [info@simulaite.ai](mailto:info@simulaite.ai)

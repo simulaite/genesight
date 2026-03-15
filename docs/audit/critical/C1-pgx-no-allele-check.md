@@ -12,8 +12,8 @@ Every rsID match in the `pharmacogenomics` table produces a scored result regard
 the user's genotype.
 
 This is the exact bug the research report identifies as the #1 consumer-genomics pitfall:
-> "rsID-based Anzeige von 'Pathogenic/Risk' ohne Allelvergleich produziert garantierte
-> False Positives"
+> "rsID-based display of 'Pathogenic/Risk' without allele comparison produces guaranteed
+> false positives"
 
 ## Evidence (Live Test)
 
@@ -58,8 +58,8 @@ trusts that an rsID match means the user is affected.
 ## Scientific Requirement
 
 From the research report (Section: Allele Matching):
-> "Der Vergleich erfolgt auf (chr,pos,REF,ALT) in einer festgelegten Assembly. rsID ist
-> nur Lookup-Hilfe."
+> "The comparison is performed on (chr,pos,REF,ALT) in a defined assembly. rsID is
+> only a lookup aid."
 
 The pseudocode requires:
 1. `normalize_user_alleles_to_plus(user, refdb)` — check alleles match
