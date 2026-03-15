@@ -17,6 +17,59 @@ pub struct AnnotatedVariant {
     pub frequency: Option<AlleleFrequency>,
     /// Pharmacogenomic annotation (if found)
     pub pharmacogenomics: Option<PharmaAnnotation>,
+    /// Reference allele at this position (from the `variants` table).
+    /// Used for allele matching to determine if the user carries the variant.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ref_allele: Option<String>,
+    /// Alternate allele at this position (from the `variants` table).
+    /// Used for allele matching to determine if the user carries the variant.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub alt_allele: Option<String>,
+}
+
+/// Classification context for a ClinVar entry.
+///
+/// Since 2024, ClinVar separates germline, somatic, and oncogenicity
+/// classifications. In a consumer DNA (germline) context, somatic and
+/// oncogenicity classifications should be treated as informational only.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum ClinVarClassificationType {
+    /// Germline (inherited) classification — most relevant for consumer DNA.
+    Germline,
+    /// Somatic (tumor tissue) classification — informational in germline context.
+    Somatic,
+    /// Oncogenicity classification — informational in germline context.
+    Oncogenicity,
+}
+
+impl ClinVarClassificationType {
+    /// Parse a classification type from its database string representation.
+    ///
+    /// Unrecognized values default to `Germline` for backward compatibility
+    /// with databases that predate the classification type column.
+    pub fn from_db_str(s: &str) -> Self {
+        match s.to_lowercase().as_str() {
+            "germline" => Self::Germline,
+            "somatic" => Self::Somatic,
+            "oncogenicity" => Self::Oncogenicity,
+            _ => Self::Germline,
+        }
+    }
+
+    /// Return a human-readable label for display in reports.
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Germline => "Germline",
+            Self::Somatic => "Somatic",
+            Self::Oncogenicity => "Oncogenicity",
+        }
+    }
+}
+
+impl std::fmt::Display for ClinVarClassificationType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.label())
+    }
 }
 
 /// ClinVar clinical classification.
@@ -30,6 +83,11 @@ pub struct ClinVarAnnotation {
     pub conditions: Vec<String>,
     /// Gene symbol (e.g., "BRCA1")
     pub gene_symbol: Option<String>,
+    /// Classification context (germline, somatic, or oncogenicity).
+    ///
+    /// Defaults to `Germline` for databases that predate the 2024
+    /// ClinVar classification split.
+    pub classification_type: ClinVarClassificationType,
 }
 
 /// SNPedia wiki annotation.

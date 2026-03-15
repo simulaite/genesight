@@ -13,6 +13,8 @@ pub struct PhenotypeResult {
     pub limitations: Vec<String>,
 }
 
+use super::diplotype::CoverageStatus;
+
 /// Classify a phenotype from an activity score, with gene-specific logic.
 ///
 /// Combines activity-score-based classification with gene-specific limitation
@@ -27,8 +29,51 @@ pub struct PhenotypeResult {
 ///
 /// A `PhenotypeResult` with the phenotype name and any applicable limitations.
 pub fn call_phenotype(gene: &str, activity_score: f64) -> PhenotypeResult {
+    call_phenotype_with_coverage(gene, activity_score, &CoverageStatus::Complete)
+}
+
+/// Classify a phenotype with coverage awareness.
+///
+/// When coverage is `Insufficient`, returns "Indeterminate" regardless of
+/// the computed activity score, because the *1 default may be wrong.
+pub fn call_phenotype_with_coverage(
+    gene: &str,
+    activity_score: f64,
+    coverage: &CoverageStatus,
+) -> PhenotypeResult {
+    // Guard: insufficient coverage -> Indeterminate
+    if let CoverageStatus::Insufficient { ref missing } = coverage {
+        let mut limitations = common_limitations();
+        limitations.push(format!(
+            "Insufficient data: {} of this gene's defining positions are missing from your \
+             genotyping data ({}). The diplotype cannot be determined and the phenotype \
+             is reported as Indeterminate. A *1/*1 (Normal) result is NOT assumed.",
+            missing.len(),
+            missing.join(", ")
+        ));
+        return PhenotypeResult {
+            phenotype: "Indeterminate".to_string(),
+            limitations,
+        };
+    }
+
     let phenotype = classify_by_activity_score(gene, activity_score);
     let mut limitations = common_limitations();
+
+    // Add coverage caveat for partial data
+    if let CoverageStatus::Partial {
+        ref missing,
+        coverage_pct,
+    } = coverage
+    {
+        limitations.push(format!(
+            "Partial coverage: {:.0}% of defining positions observed. Missing: {}. \
+             The diplotype call may be incomplete. Positions not on your array are \
+             assumed to be reference (*1), which may not be accurate.",
+            coverage_pct * 100.0,
+            missing.join(", ")
+        ));
+    }
 
     match gene {
         "TPMT" => {
@@ -439,5 +484,51 @@ mod tests {
     fn boundary_vkorc1_at_zero() {
         let result = call_phenotype("VKORC1", 0.0);
         assert_eq!(result.phenotype, "Highly Increased Warfarin Sensitivity");
+    }
+
+    // ---- Coverage-aware tests ----
+
+    #[test]
+    fn insufficient_coverage_returns_indeterminate() {
+        let coverage = CoverageStatus::Insufficient {
+            missing: vec!["rs4244285".to_string(), "rs12248560".to_string()],
+        };
+        let result = call_phenotype_with_coverage("CYP2C19", 2.0, &coverage);
+        assert_eq!(result.phenotype, "Indeterminate");
+        assert!(result
+            .limitations
+            .iter()
+            .any(|l| l.contains("Insufficient")));
+        assert!(result.limitations.iter().any(|l| l.contains("rs4244285")));
+    }
+
+    #[test]
+    fn complete_coverage_normal_phenotype() {
+        let coverage = CoverageStatus::Complete;
+        let result = call_phenotype_with_coverage("CYP2C19", 2.0, &coverage);
+        assert_eq!(result.phenotype, "Normal Metabolizer");
+    }
+
+    #[test]
+    fn partial_coverage_adds_limitation() {
+        let coverage = CoverageStatus::Partial {
+            missing: vec!["rs12248560".to_string()],
+            coverage_pct: 0.5,
+        };
+        let result = call_phenotype_with_coverage("CYP2C19", 1.0, &coverage);
+        assert_eq!(result.phenotype, "Intermediate Metabolizer");
+        assert!(result.limitations.iter().any(|l| l.contains("Partial")));
+        assert!(result.limitations.iter().any(|l| l.contains("rs12248560")));
+    }
+
+    #[test]
+    fn indeterminate_not_assumed_normal() {
+        // Even if activity score looks normal, insufficient data -> Indeterminate
+        let coverage = CoverageStatus::Insufficient {
+            missing: vec!["rs3892097".to_string()],
+        };
+        let result = call_phenotype_with_coverage("CYP2D6", 2.0, &coverage);
+        assert_eq!(result.phenotype, "Indeterminate");
+        assert!(result.limitations.iter().any(|l| l.contains("NOT assumed")));
     }
 }

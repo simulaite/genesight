@@ -5,6 +5,7 @@ pub mod dbsnp;
 pub mod gwas;
 pub mod pharmgkb;
 pub mod snpedia;
+pub mod variants;
 
 use crate::models::GenomeAssembly;
 use rusqlite::Connection;

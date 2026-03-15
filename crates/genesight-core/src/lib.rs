@@ -76,6 +76,14 @@ const ATTRIBUTIONS: &[&str] = &[
 const SNPEDIA_ATTRIBUTION: &str =
     "SNPedia: SNPedia.com — Creative Commons Attribution-NonCommercial-ShareAlike 3.0";
 
+/// DTC context statement included in every report.
+const DTC_CONTEXT: &str = "\
+This report is based on direct-to-consumer (DTC) microarray genotyping data. DTC \
+genotyping has known limitations including strand ambiguity, limited coverage of the \
+genome, and potential genotyping errors. Any clinically relevant finding should be \
+confirmed through clinical-grade testing (e.g., Sanger sequencing or clinical NGS) \
+before making medical decisions.";
+
 /// Run the full analysis pipeline: annotate, score, filter, and build report.
 ///
 /// This is the primary entry point for the GeneSight core library. It takes
@@ -204,11 +212,34 @@ pub fn analyze_with_config_and_assembly(
     // Step 2: Score annotated variants
     let scored = scorer::score_variants(&annotated);
 
+    // Step 2b: Run PGx star allele pipeline
+    let pgx_results = run_pgx_pipeline(main_db, &annotated);
+    let mut all_scored = scored;
+    all_scored.extend(pgx_results);
+
+    // Re-sort after merging PGx results so Tier 1 results appear first
+    all_scored.sort_by(|a, b| a.tier.cmp(&b.tier).then(a.category.cmp(&b.category)));
+
+    // Step 2c: Add per-result assembly mismatch warning if assemblies differ
+    if input_assembly != GenomeAssembly::Unknown
+        && db_assembly != GenomeAssembly::Unknown
+        && !input_assembly.is_compatible_with(db_assembly)
+    {
+        let warning = format!(
+            "Assembly mismatch: input uses {} but database uses {}. \
+             Position-based lookups may be incorrect for this variant.",
+            input_assembly, db_assembly
+        );
+        for result in &mut all_scored {
+            result.limitations.push(warning.clone());
+        }
+    }
+
     // Step 3: Filter by requested tiers (empty slice = include all)
     let filtered: Vec<_> = if tiers.is_empty() {
-        scored
+        all_scored
     } else {
-        scored
+        all_scored
             .into_iter()
             .filter(|r| tiers.contains(&r.tier))
             .collect()
@@ -236,12 +267,100 @@ pub fn analyze_with_config_and_assembly(
         results: filtered,
         attributions,
         disclaimer: DISCLAIMER.to_string(),
+        dtc_context: DTC_CONTEXT.to_string(),
         input_assembly,
         db_assembly,
         assembly_warnings,
     };
 
     Ok(report)
+}
+
+/// Run the pharmacogenomic star allele calling pipeline.
+///
+/// Attempts to load PGx allele definitions from the database, builds a
+/// genotype map from the annotated variants, and calls star alleles for
+/// each supported gene. Returns a list of `ScoredResult` entries for PGx
+/// findings, or an empty list if the PGx tables are absent.
+fn run_pgx_pipeline(
+    main_db: &Connection,
+    annotated: &[models::AnnotatedVariant],
+) -> Vec<models::report::ScoredResult> {
+    // Try to create StarAlleleCaller; return empty if table missing or no genes
+    let caller = match pgx::StarAlleleCaller::from_db(main_db) {
+        Ok(c) if !c.supported_genes().is_empty() => c,
+        _ => return Vec::new(),
+    };
+
+    // Build rsID -> genotype string map from annotated variants
+    let mut genotype_map: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    for av in annotated {
+        if let Some(rsid) = &av.variant.rsid {
+            let gt_str = format!("{}", av.variant.genotype);
+            if gt_str != "--" {
+                genotype_map.insert(rsid.clone(), gt_str);
+            }
+        }
+    }
+
+    let mut results = Vec::new();
+    for gene in caller.supported_genes() {
+        if let Some(call) = caller.call_gene(gene, &genotype_map) {
+            // Build a synthetic AnnotatedVariant for the PGx result.
+            // Use the first relevant rsID from the genotype map, or a placeholder.
+            let representative_variant = models::Variant {
+                rsid: None,
+                chromosome: String::new(),
+                position: 0,
+                genotype: models::Genotype::NoCall,
+                source_format: models::SourceFormat::TwentyThreeAndMe,
+            };
+
+            let annotated_variant = models::AnnotatedVariant {
+                variant: representative_variant,
+                clinvar: None,
+                snpedia: None,
+                gwas_hits: Vec::new(),
+                frequency: None,
+                pharmacogenomics: None,
+                ref_allele: None,
+                alt_allele: None,
+            };
+
+            let summary = format!(
+                "{} {}: {} ({})",
+                call.gene, call.diplotype, call.phenotype, call.activity_score
+            );
+
+            let details = format!(
+                "Star allele calling for {} identified diplotype {} with an activity score \
+                 of {:.1}, classified as {}.",
+                call.gene, call.diplotype, call.activity_score, call.phenotype
+            );
+
+            let mut limitations = call.limitations;
+            limitations.push(
+                "This result is derived from direct-to-consumer (DTC) microarray genotyping \
+                 data. Clinical-grade pharmacogenomic testing is recommended before making \
+                 medication decisions."
+                    .to_string(),
+            );
+
+            results.push(models::report::ScoredResult {
+                variant: annotated_variant,
+                tier: models::ConfidenceTier::Tier1Reliable,
+                category: models::report::ResultCategory::Pharmacogenomics,
+                confirmation_urgency:
+                    models::report::ConfirmationUrgency::ClinicalConfirmationRecommended,
+                summary,
+                details,
+                limitations,
+            });
+        }
+    }
+
+    results
 }
 
 /// Check assembly compatibility and generate warning messages.

@@ -103,6 +103,9 @@ pub fn annotate_variants_with_config(
         std::collections::HashMap::new()
     };
 
+    // Fetch ref/alt alleles from the variants table for allele matching
+    let alleles_map = db::variants::query_batch_alleles(main_db, &rsids)?;
+
     let snpedia_map = match snpedia_db {
         Some(conn) => db::snpedia::query_batch(conn, &rsids)?,
         None => {
@@ -117,6 +120,7 @@ pub fn annotate_variants_with_config(
         frequency = freq_map.len(),
         pharmgkb = pharma_map.len(),
         snpedia = snpedia_map.len(),
+        variant_alleles = alleles_map.len(),
         "database queries complete"
     );
 
@@ -129,6 +133,15 @@ pub fn annotate_variants_with_config(
         let gwas_hits = gwas_map.get(*rsid).cloned().unwrap_or_default();
         let frequency = freq_map.get(*rsid).cloned();
         let pharmacogenomics = pharma_map.get(*rsid).cloned();
+
+        // Fetch ref/alt alleles for allele matching
+        let (ref_allele, alt_allele) = match alleles_map.get(*rsid) {
+            Some(alleles) => (
+                Some(alleles.ref_allele.clone()),
+                Some(alleles.alt_allele.clone()),
+            ),
+            None => (None, None),
+        };
 
         // Only include variants with at least one annotation
         let has_annotation = clinvar.is_some()
@@ -145,6 +158,8 @@ pub fn annotate_variants_with_config(
                 gwas_hits,
                 frequency,
                 pharmacogenomics,
+                ref_allele,
+                alt_allele,
             });
         }
     }

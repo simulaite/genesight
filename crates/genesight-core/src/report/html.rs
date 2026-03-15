@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 use std::fmt::Write;
 
 use crate::models::confidence::ConfidenceTier;
-use crate::models::report::{Report, ResultCategory, ScoredResult};
+use crate::models::report::{ConfirmationUrgency, Report, ResultCategory, ScoredResult};
 
 use super::ReportError;
 
@@ -22,8 +22,10 @@ pub fn render(report: &Report) -> Result<String, ReportError> {
     write_body_open(&mut out);
     write_header(&mut out);
     write_disclaimer(&mut out, &report.disclaimer);
+    write_dtc_context(&mut out, &report.dtc_context);
     write_summary(&mut out, report);
     write_assembly_warnings(&mut out, &report.assembly_warnings);
+    write_fda_pgx_disclaimer(&mut out, &report.results);
     write_results(&mut out, &report.results);
     write_attributions(&mut out, &report.attributions);
     write_body_close(&mut out);
@@ -232,6 +234,34 @@ td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
 /* Frequency bar */
 .freq-bar-bg { background: var(--color-border); border-radius: 3px; height: 6px; width: 100%; margin: 0.15rem 0; }
 .freq-bar { background: var(--color-accent); height: 100%; border-radius: 3px; min-width: 1px; }
+
+/* Urgency indicators */
+.urgency-high {
+    background: #fef2f2; border-left: 4px solid #ef4444; padding: 0.6rem 1rem;
+    margin: 0.5rem 0; border-radius: 0 6px 6px 0; font-size: 0.88rem; color: #991b1b;
+}
+.urgency-clinical {
+    background: #fffbeb; border-left: 4px solid #f59e0b; padding: 0.6rem 1rem;
+    margin: 0.5rem 0; border-radius: 0 6px 6px 0; font-size: 0.88rem; color: #92400e;
+}
+.urgency-info {
+    background: #eff6ff; border-left: 4px solid #3b82f6; padding: 0.6rem 1rem;
+    margin: 0.5rem 0; border-radius: 0 6px 6px 0; font-size: 0.88rem; color: #1e40af;
+}
+
+/* DTC context block */
+.dtc-context {
+    background: #f0f9ff; border: 1px solid #bae6fd; padding: 1rem 1.25rem;
+    margin: 1.5rem 0; border-radius: 8px; font-size: 0.88rem; color: #0c4a6e;
+}
+.dtc-context strong { display: block; margin-bottom: 0.3rem; }
+
+/* FDA PGx disclaimer */
+.fda-pgx {
+    background: #fefce8; border: 1px solid #fde68a; padding: 1rem 1.25rem;
+    margin: 1.5rem 0; border-radius: 8px; font-size: 0.88rem; color: #713f12;
+}
+.fda-pgx strong { display: block; margin-bottom: 0.3rem; }
 </style>
 </head>
 "#,
@@ -254,6 +284,59 @@ fn write_disclaimer(out: &mut String, disclaimer: &str) {
         let _ = writeln!(out, "<p>{line}</p>");
     }
     out.push_str("</div>\n");
+}
+
+/// Render the DTC context statement if non-empty.
+fn write_dtc_context(out: &mut String, dtc_context: &str) {
+    if dtc_context.is_empty() {
+        return;
+    }
+    out.push_str("<div class=\"dtc-context\">\n<strong>Direct-to-Consumer Data Context</strong>\n");
+    let escaped = html_escape(dtc_context);
+    for line in escaped.lines() {
+        let _ = writeln!(out, "<p>{line}</p>");
+    }
+    out.push_str("</div>\n");
+}
+
+/// Render the FDA PGx disclaimer if any pharmacogenomic results exist.
+fn write_fda_pgx_disclaimer(out: &mut String, results: &[ScoredResult]) {
+    let has_pgx = results
+        .iter()
+        .any(|r| r.category == ResultCategory::Pharmacogenomics);
+    if !has_pgx {
+        return;
+    }
+    out.push_str(
+        "<div class=\"fda-pgx\">\n\
+         <strong>FDA Notice: Pharmacogenomic Results</strong>\n\
+         <p>Pharmacogenomic results from consumer genotyping arrays have NOT been reviewed or \
+         approved by the U.S. Food and Drug Administration (FDA) for clinical use. Do not alter \
+         any medication regimen based solely on these results. Consult a healthcare provider or \
+         clinical pharmacogenomics service for validated testing.</p>\n\
+         </div>\n",
+    );
+}
+
+/// Generate an HTML urgency indicator for a scored result.
+fn urgency_html(urgency: ConfirmationUrgency) -> &'static str {
+    match urgency {
+        ConfirmationUrgency::HighImpact => {
+            "<div class=\"urgency-high\">\
+             <strong>High Impact:</strong> Clinical-grade confirmation strongly recommended \
+             (ACMG actionable gene).</div>"
+        }
+        ConfirmationUrgency::ClinicalConfirmationRecommended => {
+            "<div class=\"urgency-clinical\">\
+             <strong>Clinical Confirmation Recommended:</strong> This finding should be \
+             confirmed through clinical-grade testing before any medical decisions.</div>"
+        }
+        ConfirmationUrgency::InformationalOnly => {
+            "<div class=\"urgency-info\">\
+             <strong>Informational Only:</strong> No clinical action warranted from \
+             DTC data alone.</div>"
+        }
+    }
 }
 
 fn write_summary(out: &mut String, report: &Report) {
@@ -676,10 +759,11 @@ fn short_category_label(cat: ResultCategory) -> &'static str {
         ResultCategory::MonogenicDisease => "Disease",
         ResultCategory::CarrierStatus => "Carrier",
         ResultCategory::Pharmacogenomics => "Pharma",
-        ResultCategory::PolygenicRiskScore => "PRS",
+        ResultCategory::GwasAssociation => "GWAS",
         ResultCategory::PhysicalTrait => "Trait",
         ResultCategory::ComplexTrait => "Complex",
         ResultCategory::Ancestry => "Ancestry",
+        ResultCategory::ClinVarConflicting => "Conflicting",
     }
 }
 
@@ -689,10 +773,11 @@ fn category_bar_color(cat: ResultCategory) -> &'static str {
         ResultCategory::MonogenicDisease => "#dc2626",
         ResultCategory::CarrierStatus => "#2563eb",
         ResultCategory::Pharmacogenomics => "#9333ea",
-        ResultCategory::PolygenicRiskScore => "#d97706",
+        ResultCategory::GwasAssociation => "#d97706",
         ResultCategory::PhysicalTrait => "#0891b2",
         ResultCategory::ComplexTrait => "#6b7280",
         ResultCategory::Ancestry => "#374151",
+        ResultCategory::ClinVarConflicting => "#a16207",
     }
 }
 
@@ -743,6 +828,8 @@ fn write_results(out: &mut String, results: &[ScoredResult]) {
                     "<div class=\"details\">{}</div>",
                     html_escape(&result.details)
                 );
+                out.push_str(urgency_html(result.confirmation_urgency));
+                out.push('\n');
                 if !result.limitations.is_empty() {
                     out.push_str(
                         "<div class=\"details\" style=\"color:#b45309;margin-top:0.5rem;\">\n",
@@ -842,6 +929,7 @@ mod tests {
     use super::*;
     use crate::models::annotation::*;
     use crate::models::assembly::GenomeAssembly;
+    use crate::models::report::ConfirmationUrgency;
     use crate::models::variant::{Genotype, SourceFormat, Variant};
 
     fn make_test_report() -> Report {
@@ -860,11 +948,14 @@ mod tests {
                 review_stars: 3,
                 conditions: vec!["Breast cancer".to_string()],
                 gene_symbol: Some("BRCA1".to_string()),
+                classification_type: crate::models::annotation::ClinVarClassificationType::Germline,
             }),
             snpedia: None,
             gwas_hits: Vec::new(),
             frequency: None,
             pharmacogenomics: None,
+            ref_allele: None,
+            alt_allele: None,
         };
 
         Report {
@@ -874,12 +965,14 @@ mod tests {
                 variant: annotated,
                 tier: ConfidenceTier::Tier1Reliable,
                 category: ResultCategory::MonogenicDisease,
+                confirmation_urgency: ConfirmationUrgency::HighImpact,
                 summary: "BRCA1 (rs123) — Pathogenic (3-star review)".to_string(),
                 details: "Genotype: AG. Classification: Pathogenic.".to_string(),
                 limitations: Vec::new(),
             }],
             attributions: vec!["ClinVar: NCBI/NLM (public domain)".to_string()],
             disclaimer: "This is not medical advice.".to_string(),
+            dtc_context: String::new(),
             input_assembly: GenomeAssembly::GRCh37,
             db_assembly: GenomeAssembly::GRCh37,
             assembly_warnings: Vec::new(),
@@ -929,6 +1022,7 @@ mod tests {
             results: vec![],
             attributions: vec![],
             disclaimer: "Disclaimer.".to_string(),
+            dtc_context: String::new(),
             input_assembly: GenomeAssembly::Unknown,
             db_assembly: GenomeAssembly::Unknown,
             assembly_warnings: Vec::new(),

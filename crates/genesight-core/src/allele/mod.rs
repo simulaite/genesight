@@ -164,6 +164,102 @@ pub fn match_alleles_with_frequency(
     }
 }
 
+/// Result of counting risk allele copies in a user's genotype.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RiskAlleleCopies {
+    /// Determined copy count (0, 1, or 2) with the match type used.
+    Determined { copies: u8, match_type: AlleleMatch },
+    /// The risk allele is palindromic with the other allele, so strand
+    /// cannot be resolved from sequence alone.
+    Palindromic { copies: u8 },
+    /// Risk allele was not provided in the GWAS data.
+    Indeterminate,
+}
+
+/// Match a single risk allele character against an observed allele.
+///
+/// Returns `DirectMatch` if the bases match (case-insensitive),
+/// `ComplementMatch` if the complement matches, or `Mismatch`.
+pub fn match_single_allele(risk: char, observed: char) -> AlleleMatch {
+    let r = risk.to_ascii_uppercase();
+    let o = observed.to_ascii_uppercase();
+
+    if r == o {
+        AlleleMatch::DirectMatch
+    } else if complement(r) == Some(o) {
+        AlleleMatch::ComplementMatch
+    } else {
+        AlleleMatch::Mismatch
+    }
+}
+
+/// Count how many copies of a risk allele a genotype carries,
+/// with strand-awareness and palindromic detection.
+///
+/// # Arguments
+///
+/// * `risk_allele` - The risk allele string from GWAS (e.g., "A", "G").
+///   If `None`, returns `Indeterminate`.
+/// * `allele1` - First allele of the user's genotype.
+/// * `allele2` - Second allele of the user's genotype.
+pub fn count_risk_allele_copies(
+    risk_allele: Option<&str>,
+    allele1: char,
+    allele2: char,
+) -> RiskAlleleCopies {
+    let risk_str = match risk_allele {
+        Some(r) if !r.is_empty() => r.trim(),
+        _ => return RiskAlleleCopies::Indeterminate,
+    };
+
+    let risk_char = match risk_str.chars().next() {
+        Some(c) if c.is_ascii_alphabetic() => c.to_ascii_uppercase(),
+        _ => return RiskAlleleCopies::Indeterminate,
+    };
+
+    let a1 = allele1.to_ascii_uppercase();
+    let a2 = allele2.to_ascii_uppercase();
+
+    // Check if this is a palindromic situation
+    let is_palindrome = if a1 == a2 {
+        false // Homozygous — cannot determine palindrome from genotype alone
+    } else {
+        is_palindromic(a1, a2)
+    };
+
+    let match1 = match_single_allele(risk_char, a1);
+    let match2 = match_single_allele(risk_char, a2);
+
+    let direct_copies =
+        u8::from(match1 == AlleleMatch::DirectMatch) + u8::from(match2 == AlleleMatch::DirectMatch);
+    let complement_copies = u8::from(match1 == AlleleMatch::ComplementMatch)
+        + u8::from(match2 == AlleleMatch::ComplementMatch);
+
+    if is_palindrome {
+        let copies = if direct_copies > 0 {
+            direct_copies
+        } else {
+            complement_copies
+        };
+        RiskAlleleCopies::Palindromic { copies }
+    } else if direct_copies > 0 {
+        RiskAlleleCopies::Determined {
+            copies: direct_copies,
+            match_type: AlleleMatch::DirectMatch,
+        }
+    } else if complement_copies > 0 {
+        RiskAlleleCopies::Determined {
+            copies: complement_copies,
+            match_type: AlleleMatch::ComplementMatch,
+        }
+    } else {
+        RiskAlleleCopies::Determined {
+            copies: 0,
+            match_type: AlleleMatch::Mismatch,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -315,5 +411,81 @@ mod tests {
             match_alleles_with_frequency(('C', 'G'), 'C', 'G', Some(0.15), Some(0.12)),
             AlleleMatch::DirectMatch,
         );
+    }
+
+    // --- count_risk_allele_copies tests ---
+
+    #[test]
+    fn risk_allele_direct_match_one_copy() {
+        // User A/G, risk allele A -> 1 copy
+        let result = count_risk_allele_copies(Some("A"), 'A', 'G');
+        assert_eq!(
+            result,
+            RiskAlleleCopies::Determined {
+                copies: 1,
+                match_type: AlleleMatch::DirectMatch
+            }
+        );
+    }
+
+    #[test]
+    fn risk_allele_direct_match_two_copies() {
+        // User A/A, risk allele A -> 2 copies
+        let result = count_risk_allele_copies(Some("A"), 'A', 'A');
+        assert_eq!(
+            result,
+            RiskAlleleCopies::Determined {
+                copies: 2,
+                match_type: AlleleMatch::DirectMatch
+            }
+        );
+    }
+
+    #[test]
+    fn risk_allele_complement_match() {
+        // User T/G, risk allele A -> complement match (T is complement of A) -> 1 copy
+        let result = count_risk_allele_copies(Some("A"), 'T', 'G');
+        assert_eq!(
+            result,
+            RiskAlleleCopies::Determined {
+                copies: 1,
+                match_type: AlleleMatch::ComplementMatch
+            }
+        );
+    }
+
+    #[test]
+    fn risk_allele_zero_copies() {
+        // User G/G, risk allele A -> 0 copies
+        let result = count_risk_allele_copies(Some("A"), 'G', 'G');
+        assert_eq!(
+            result,
+            RiskAlleleCopies::Determined {
+                copies: 0,
+                match_type: AlleleMatch::Mismatch
+            }
+        );
+    }
+
+    #[test]
+    fn risk_allele_palindromic_het() {
+        // User A/T, risk allele A -> palindromic
+        let result = count_risk_allele_copies(Some("A"), 'A', 'T');
+        assert!(matches!(
+            result,
+            RiskAlleleCopies::Palindromic { copies: 1 }
+        ));
+    }
+
+    #[test]
+    fn risk_allele_none_is_indeterminate() {
+        let result = count_risk_allele_copies(None, 'A', 'G');
+        assert_eq!(result, RiskAlleleCopies::Indeterminate);
+    }
+
+    #[test]
+    fn risk_allele_empty_is_indeterminate() {
+        let result = count_risk_allele_copies(Some(""), 'A', 'G');
+        assert_eq!(result, RiskAlleleCopies::Indeterminate);
     }
 }

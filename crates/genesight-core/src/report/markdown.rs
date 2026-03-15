@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 use std::fmt::Write;
 
 use crate::models::confidence::ConfidenceTier;
-use crate::models::report::{Report, ResultCategory, ScoredResult};
+use crate::models::report::{ConfirmationUrgency, Report, ResultCategory, ScoredResult};
 
 use super::ReportError;
 
@@ -24,7 +24,9 @@ pub fn render(report: &Report) -> Result<String, ReportError> {
 
     write_header(&mut out);
     write_disclaimer(&mut out, &report.disclaimer);
+    write_dtc_context(&mut out, &report.dtc_context);
     write_summary(&mut out, report);
+    write_fda_pgx_disclaimer(&mut out, &report.results);
     write_results(&mut out, &report.results);
     write_attributions(&mut out, &report.attributions);
 
@@ -42,6 +44,50 @@ fn write_disclaimer(out: &mut String, disclaimer: &str) {
         let _ = writeln!(out, "> {line}");
     }
     out.push_str("\n---\n\n");
+}
+
+/// Render the DTC context statement if non-empty.
+fn write_dtc_context(out: &mut String, dtc_context: &str) {
+    if dtc_context.is_empty() {
+        return;
+    }
+    out.push_str("> **Direct-to-Consumer Data Context**\n>\n");
+    for line in dtc_context.lines() {
+        let _ = writeln!(out, "> {line}");
+    }
+    out.push_str("\n---\n\n");
+}
+
+/// Render the FDA PGx disclaimer if any pharmacogenomic results exist.
+fn write_fda_pgx_disclaimer(out: &mut String, results: &[ScoredResult]) {
+    let has_pgx = results
+        .iter()
+        .any(|r| r.category == ResultCategory::Pharmacogenomics);
+    if !has_pgx {
+        return;
+    }
+    out.push_str("> **FDA Notice: Pharmacogenomic Results**\n>\n");
+    out.push_str(
+        "> Pharmacogenomic results from consumer genotyping arrays have NOT been reviewed or \
+         approved by the U.S. Food and Drug Administration (FDA) for clinical use. Do not alter \
+         any medication regimen based solely on these results. Consult a healthcare provider or \
+         clinical pharmacogenomics service for validated testing.\n\n",
+    );
+}
+
+/// Format urgency level for markdown output.
+fn urgency_text(urgency: ConfirmationUrgency) -> &'static str {
+    match urgency {
+        ConfirmationUrgency::HighImpact => {
+            "**High Impact:** Clinical-grade confirmation strongly recommended (ACMG actionable gene)."
+        }
+        ConfirmationUrgency::ClinicalConfirmationRecommended => {
+            "**Clinical Confirmation Recommended:** This finding should be confirmed through clinical-grade testing before any medical decisions."
+        }
+        ConfirmationUrgency::InformationalOnly => {
+            "**Informational Only:** No clinical action warranted from DTC data alone."
+        }
+    }
 }
 
 fn write_summary(out: &mut String, report: &Report) {
@@ -130,6 +176,17 @@ fn write_results(out: &mut String, results: &[ScoredResult]) {
                 let _ = writeln!(out, "- **Genotype:** {genotype}");
                 let _ = writeln!(out, "- **Summary:** {}", result.summary);
                 let _ = writeln!(out, "- **Details:** {}", result.details);
+                // Urgency indicator
+                match result.confirmation_urgency {
+                    ConfirmationUrgency::HighImpact
+                    | ConfirmationUrgency::ClinicalConfirmationRecommended => {
+                        let _ =
+                            writeln!(out, "\n> {}\n", urgency_text(result.confirmation_urgency));
+                    }
+                    ConfirmationUrgency::InformationalOnly => {
+                        let _ = writeln!(out, "- {}", urgency_text(result.confirmation_urgency));
+                    }
+                }
                 if !result.limitations.is_empty() {
                     let _ = writeln!(out, "- **Limitations:**");
                     for limitation in &result.limitations {
@@ -219,10 +276,11 @@ impl ResultCategory {
             ResultCategory::MonogenicDisease => 0,
             ResultCategory::CarrierStatus => 1,
             ResultCategory::Pharmacogenomics => 2,
-            ResultCategory::PolygenicRiskScore => 3,
+            ResultCategory::GwasAssociation => 3,
             ResultCategory::PhysicalTrait => 4,
             ResultCategory::ComplexTrait => 5,
             ResultCategory::Ancestry => 6,
+            ResultCategory::ClinVarConflicting => 7,
         }
     }
 }
@@ -232,6 +290,7 @@ mod tests {
     use super::*;
     use crate::models::annotation::*;
     use crate::models::assembly::GenomeAssembly;
+    use crate::models::report::ConfirmationUrgency;
     use crate::models::variant::{Genotype, SourceFormat, Variant};
 
     fn make_test_report() -> Report {
@@ -250,11 +309,14 @@ mod tests {
                 review_stars: 3,
                 conditions: vec!["Breast cancer".to_string()],
                 gene_symbol: Some("BRCA1".to_string()),
+                classification_type: crate::models::annotation::ClinVarClassificationType::Germline,
             }),
             snpedia: None,
             gwas_hits: Vec::new(),
             frequency: None,
             pharmacogenomics: None,
+            ref_allele: None,
+            alt_allele: None,
         };
 
         Report {
@@ -264,6 +326,7 @@ mod tests {
                 variant: annotated,
                 tier: ConfidenceTier::Tier1Reliable,
                 category: ResultCategory::MonogenicDisease,
+                confirmation_urgency: ConfirmationUrgency::HighImpact,
                 summary: "BRCA1 (rs123) — Pathogenic (3-star review)".to_string(),
                 details: "Genotype: AG. Classification: Pathogenic.".to_string(),
                 limitations: Vec::new(),
@@ -274,6 +337,7 @@ mod tests {
             ],
             disclaimer: "This is not medical advice. Consult a healthcare professional."
                 .to_string(),
+            dtc_context: String::new(),
             input_assembly: GenomeAssembly::GRCh37,
             db_assembly: GenomeAssembly::GRCh37,
             assembly_warnings: Vec::new(),
@@ -328,6 +392,7 @@ mod tests {
             results: vec![],
             attributions: vec![],
             disclaimer: "Disclaimer.".to_string(),
+            dtc_context: String::new(),
             input_assembly: GenomeAssembly::Unknown,
             db_assembly: GenomeAssembly::Unknown,
             assembly_warnings: Vec::new(),

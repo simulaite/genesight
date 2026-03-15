@@ -16,12 +16,16 @@
 //! - Only single-variant star alleles are supported (no multi-variant haplotypes)
 //! - Gene deletion/duplication (e.g., CYP2D6 CNV) is not detected
 
+pub mod definitions;
+pub mod diplotype;
+pub mod phasing;
 pub mod phenotype;
 
 use std::collections::HashMap;
 
 use rusqlite::Connection;
 
+use crate::allele::{match_single_allele, AlleleMatch};
 use crate::db::DbError;
 
 /// A star allele definition from the database.
@@ -144,7 +148,13 @@ impl StarAlleleCaller {
             if let Some(observed) = genotypes.get(&def.rsid) {
                 any_variant_observed = true;
                 let alt_char = def.alt_allele.chars().next()?;
-                let count = observed.chars().filter(|&c| c == alt_char).count() as u8;
+                let count = observed
+                    .chars()
+                    .filter(|&c| {
+                        let m = match_single_allele(alt_char, c);
+                        matches!(m, AlleleMatch::DirectMatch | AlleleMatch::ComplementMatch)
+                    })
+                    .count() as u8;
 
                 // For alleles defined by multiple variants (e.g., TPMT *3A),
                 // we track the minimum count across all defining variants
