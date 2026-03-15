@@ -1,6 +1,4 @@
-use egui::{
-    Color32, CornerRadius, FontFamily, FontId, Margin, Stroke, Style, TextStyle, Visuals,
-};
+use egui::{Color32, CornerRadius, FontFamily, FontId, Margin, Stroke, Style, TextStyle, Visuals};
 
 // ── Color palette ──────────────────────────────────────────────────────────
 
@@ -134,11 +132,23 @@ pub fn apply_theme(ctx: &egui::Context) {
 
     // Text styles
     style.text_styles = [
-        (TextStyle::Heading, FontId::new(22.0, FontFamily::Proportional)),
+        (
+            TextStyle::Heading,
+            FontId::new(22.0, FontFamily::Proportional),
+        ),
         (TextStyle::Body, FontId::new(14.0, FontFamily::Proportional)),
-        (TextStyle::Monospace, FontId::new(13.0, FontFamily::Monospace)),
-        (TextStyle::Button, FontId::new(14.0, FontFamily::Proportional)),
-        (TextStyle::Small, FontId::new(12.0, FontFamily::Proportional)),
+        (
+            TextStyle::Monospace,
+            FontId::new(13.0, FontFamily::Monospace),
+        ),
+        (
+            TextStyle::Button,
+            FontId::new(14.0, FontFamily::Proportional),
+        ),
+        (
+            TextStyle::Small,
+            FontId::new(12.0, FontFamily::Proportional),
+        ),
     ]
     .into();
 
@@ -184,9 +194,11 @@ pub fn category_color(cat: genesight_core::models::ResultCategory) -> Color32 {
         ResultCategory::MonogenicDisease => CAT_DISEASE,
         ResultCategory::CarrierStatus => CAT_CARRIER,
         ResultCategory::Pharmacogenomics => CAT_PHARMA,
-        ResultCategory::PolygenicRiskScore => CAT_PRS,
+        ResultCategory::GwasAssociation => CAT_PRS,
         ResultCategory::PhysicalTrait => CAT_TRAIT,
-        ResultCategory::ComplexTrait | ResultCategory::Ancestry => CAT_COMPLEX,
+        ResultCategory::ComplexTrait
+        | ResultCategory::Ancestry
+        | ResultCategory::ClinVarConflicting => CAT_COMPLEX,
     }
 }
 
@@ -197,9 +209,11 @@ pub fn category_bg(cat: genesight_core::models::ResultCategory) -> Color32 {
         ResultCategory::MonogenicDisease => CAT_DISEASE_BG,
         ResultCategory::CarrierStatus => CAT_CARRIER_BG,
         ResultCategory::Pharmacogenomics => CAT_PHARMA_BG,
-        ResultCategory::PolygenicRiskScore => CAT_PRS_BG,
+        ResultCategory::GwasAssociation => CAT_PRS_BG,
         ResultCategory::PhysicalTrait => CAT_TRAIT_BG,
-        ResultCategory::ComplexTrait | ResultCategory::Ancestry => CAT_COMPLEX_BG,
+        ResultCategory::ComplexTrait
+        | ResultCategory::Ancestry
+        | ResultCategory::ClinVarConflicting => CAT_COMPLEX_BG,
     }
 }
 

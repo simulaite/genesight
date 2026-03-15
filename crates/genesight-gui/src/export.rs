@@ -6,8 +6,7 @@ use genesight_core::report::{self, OutputFormat};
 
 /// Export the report as an HTML file.
 pub fn export_html(report: &Report, path: &Path) -> Result<()> {
-    let html = report::render(report, OutputFormat::Html)
-        .map_err(|e| anyhow::anyhow!("{e}"))?;
+    let html = report::render(report, OutputFormat::Html).map_err(|e| anyhow::anyhow!("{e}"))?;
     std::fs::write(path, html.as_bytes())
         .with_context(|| format!("writing HTML to {}", path.display()))?;
     Ok(())
@@ -17,16 +16,14 @@ pub fn export_html(report: &Report, path: &Path) -> Result<()> {
 pub fn export_pdf(report: &Report, path: &Path) -> Result<()> {
     use printpdf::*;
 
-    let (doc, page1, layer1) = PdfDocument::new(
-        "GeneSight Report",
-        Mm(210.0),
-        Mm(297.0),
-        "Layer 1",
-    );
+    let (doc, page1, layer1) =
+        PdfDocument::new("GeneSight Report", Mm(210.0), Mm(297.0), "Layer 1");
 
-    let font = doc.add_builtin_font(BuiltinFont::Helvetica)
+    let font = doc
+        .add_builtin_font(BuiltinFont::Helvetica)
         .map_err(|e| anyhow::anyhow!("font error: {e}"))?;
-    let font_bold = doc.add_builtin_font(BuiltinFont::HelveticaBold)
+    let font_bold = doc
+        .add_builtin_font(BuiltinFont::HelveticaBold)
         .map_err(|e| anyhow::anyhow!("font error: {e}"))?;
 
     let margin_left = Mm(20.0);
@@ -67,10 +64,7 @@ pub fn export_pdf(report: &Report, path: &Path) -> Result<()> {
         layer.use_text("GeneSight Report", 20.0, margin_left, y, &font_bold);
         y -= Mm(8.0);
         layer.use_text(
-            &format!(
-                "Generated: {}",
-                chrono_lite_date()
-            ),
+            &format!("Generated: {}", chrono_lite_date()),
             10.0,
             margin_left,
             y,
@@ -236,7 +230,20 @@ fn chrono_lite_date() -> String {
         remaining_days -= days_in_year;
         y += 1;
     }
-    let months = [31, if is_leap(y) { 29 } else { 28 }, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    let months = [
+        31,
+        if is_leap(y) { 29 } else { 28 },
+        31,
+        30,
+        31,
+        30,
+        31,
+        31,
+        30,
+        31,
+        30,
+        31,
+    ];
     let mut m = 1;
     for &md in &months {
         if remaining_days < md {

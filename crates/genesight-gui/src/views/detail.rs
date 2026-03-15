@@ -10,12 +10,7 @@ pub fn draw(ui: &mut egui::Ui, result: &ScoredResult) {
         .auto_shrink(false)
         .show(ui, |ui| {
             let gene = gene_name(result);
-            let rsid = result
-                .variant
-                .variant
-                .rsid
-                .as_deref()
-                .unwrap_or("\u{2014}");
+            let rsid = result.variant.variant.rsid.as_deref().unwrap_or("\u{2014}");
 
             // ── Header ───────────────────────────────────────────────
             ui.vertical(|ui| {
@@ -63,8 +58,7 @@ pub fn draw(ui: &mut egui::Ui, result: &ScoredResult) {
                         ui.label(
                             RichText::new(format!(
                                 "chr{}:{}",
-                                result.variant.variant.chromosome,
-                                result.variant.variant.position
+                                result.variant.variant.chromosome, result.variant.variant.position
                             ))
                             .size(11.0)
                             .family(egui::FontFamily::Monospace)
@@ -136,11 +130,7 @@ pub fn draw(ui: &mut egui::Ui, result: &ScoredResult) {
                                         .size(12.0)
                                         .color(theme::TEXT_MUTED),
                                 );
-                                ui.label(
-                                    RichText::new(cond)
-                                        .size(12.0)
-                                        .color(theme::TEXT_PRIMARY),
-                                );
+                                ui.label(RichText::new(cond).size(12.0).color(theme::TEXT_PRIMARY));
                             });
                         }
                     }
@@ -169,11 +159,7 @@ pub fn draw(ui: &mut egui::Ui, result: &ScoredResult) {
                                         .strong()
                                         .color(theme::ACCENT),
                                 );
-                                ui.label(
-                                    RichText::new(rec)
-                                        .size(12.0)
-                                        .color(theme::TEXT_PRIMARY),
-                                );
+                                ui.label(RichText::new(rec).size(12.0).color(theme::TEXT_PRIMARY));
                             });
                     }
                 });
@@ -303,9 +289,7 @@ pub fn draw(ui: &mut egui::Ui, result: &ScoredResult) {
                                 .inner_margin(egui::Margin::symmetric(8, 3))
                                 .show(ui, |ui| {
                                     ui.label(
-                                        RichText::new(rep)
-                                            .size(11.0)
-                                            .color(theme::TEXT_SECONDARY),
+                                        RichText::new(rep).size(11.0).color(theme::TEXT_SECONDARY),
                                     );
                                 });
                         }
@@ -327,11 +311,7 @@ pub fn draw(ui: &mut egui::Ui, result: &ScoredResult) {
 
 fn info_row(ui: &mut egui::Ui, label: &str, value: &str) {
     ui.horizontal(|ui| {
-        ui.label(
-            RichText::new(label)
-                .size(11.0)
-                .color(theme::TEXT_MUTED),
-        );
+        ui.label(RichText::new(label).size(11.0).color(theme::TEXT_MUTED));
         ui.label(
             RichText::new(value)
                 .size(12.0)
@@ -355,11 +335,7 @@ fn grid_row(ui: &mut egui::Ui, label: &str, value: &str) {
 fn freq_row(ui: &mut egui::Ui, label: &str, af: f64) {
     ui.horizontal(|ui| {
         ui.add_space(8.0);
-        ui.label(
-            RichText::new(label)
-                .size(11.0)
-                .color(theme::TEXT_SECONDARY),
-        );
+        ui.label(RichText::new(label).size(11.0).color(theme::TEXT_SECONDARY));
         ui.label(
             RichText::new(format!("{:.4}%", af * 100.0))
                 .size(11.0)

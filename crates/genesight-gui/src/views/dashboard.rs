@@ -49,10 +49,7 @@ pub fn draw(ui: &mut egui::Ui, data: &mut AppData) {
                             |ui| {
                                 ui.vertical_centered(|ui| {
                                     ui.add_space(ui.available_height() * 0.3);
-                                    ui.label(
-                                        RichText::new("\u{1F50D}")
-                                            .size(32.0),
-                                    );
+                                    ui.label(RichText::new("\u{1F50D}").size(32.0));
                                     ui.add_space(8.0);
                                     ui.label(
                                         RichText::new("Select a result")
@@ -163,109 +160,125 @@ fn stat_chip(ui: &mut egui::Ui, label: &str, value: &str, color: Color32, bg: Co
 }
 
 fn draw_sidebar(ui: &mut egui::Ui, data: &mut AppData) {
-    egui::Frame::NONE
-        .fill(theme::BG_SIDEBAR)
-        .show(ui, |ui| {
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                ui.add_space(12.0);
+    egui::Frame::NONE.fill(theme::BG_SIDEBAR).show(ui, |ui| {
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            ui.add_space(12.0);
 
-                // File info
-                if let Some(ref path) = data.dna_file {
-                    let name = path
-                        .file_name()
-                        .map(|n| n.to_string_lossy().to_string())
-                        .unwrap_or_default();
-
-                    egui::Frame::NONE
-                        .fill(theme::BG_SURFACE)
-                        .corner_radius(egui::CornerRadius::same(8))
-                        .inner_margin(egui::Margin::same(10))
-                        .show(ui, |ui| {
-                            ui.horizontal(|ui| {
-                                ui.label(RichText::new("\u{1F4C4}").size(14.0));
-                                ui.vertical(|ui| {
-                                    ui.spacing_mut().item_spacing.y = 1.0;
-                                    ui.label(
-                                        RichText::new("Loaded File")
-                                            .size(10.0)
-                                            .color(theme::TEXT_MUTED),
-                                    );
-                                    ui.label(
-                                        RichText::new(&name)
-                                            .size(12.0)
-                                            .strong()
-                                            .color(theme::TEXT_PRIMARY),
-                                    );
-                                });
-                            });
-                        });
-                    ui.add_space(12.0);
-                }
-
-                // Search
-                sidebar_heading(ui, "Search");
-                ui.add_space(4.0);
-                let search_changed = ui
-                    .add(
-                        egui::TextEdit::singleline(&mut data.search_query)
-                            .hint_text("\u{1F50D} rsID, gene, keyword...")
-                            .desired_width(ui.available_width() - 16.0)
-                            .margin(egui::Margin::symmetric(8, 6)),
-                    )
-                    .changed();
-
-                ui.add_space(16.0);
-
-                // Tier filter
-                sidebar_heading(ui, "Confidence");
-                ui.add_space(6.0);
-
-                let (t1, t2, t3) = data.tier_counts();
-                let mut filter_changed = false;
-
-                filter_changed |=
-                    tier_checkbox(ui, &mut data.tier_filter[0], "Reliable", t1, theme::TIER1, theme::TIER1_BG);
-                filter_changed |=
-                    tier_checkbox(ui, &mut data.tier_filter[1], "Probable", t2, theme::TIER2, theme::TIER2_BG);
-                filter_changed |=
-                    tier_checkbox(ui, &mut data.tier_filter[2], "Speculative", t3, theme::TIER3, theme::TIER3_BG);
-
-                ui.add_space(16.0);
-
-                // Dataset toggles
-                sidebar_heading(ui, "Datasets");
-                ui.add_space(6.0);
+            // File info
+            if let Some(ref path) = data.dna_file {
+                let name = path
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_default();
 
                 egui::Frame::NONE
                     .fill(theme::BG_SURFACE)
                     .corner_radius(egui::CornerRadius::same(8))
                     .inner_margin(egui::Margin::same(10))
                     .show(ui, |ui| {
-                        ui.spacing_mut().item_spacing.y = 4.0;
-                        ui.checkbox(&mut data.annotation_config.clinvar, "ClinVar");
-                        ui.checkbox(&mut data.annotation_config.gwas, "GWAS Catalog");
-                        ui.checkbox(&mut data.annotation_config.frequencies, "Allele Freq.");
-                        ui.checkbox(&mut data.annotation_config.pharmacogenomics, "PharmGKB");
-                        ui.checkbox(&mut data.snpedia_enabled, "SNPedia");
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new("\u{1F4C4}").size(14.0));
+                            ui.vertical(|ui| {
+                                ui.spacing_mut().item_spacing.y = 1.0;
+                                ui.label(
+                                    RichText::new("Loaded File")
+                                        .size(10.0)
+                                        .color(theme::TEXT_MUTED),
+                                );
+                                ui.label(
+                                    RichText::new(&name)
+                                        .size(12.0)
+                                        .strong()
+                                        .color(theme::TEXT_PRIMARY),
+                                );
+                            });
+                        });
                     });
+                ui.add_space(12.0);
+            }
 
-                ui.add_space(6.0);
-                ui.horizontal_wrapped(|ui| {
-                    ui.add_space(4.0);
-                    ui.label(
-                        RichText::new("Re-analyze to apply dataset changes")
-                            .size(10.0)
-                            .color(theme::TEXT_MUTED),
-                    );
+            // Search
+            sidebar_heading(ui, "Search");
+            ui.add_space(4.0);
+            let search_changed = ui
+                .add(
+                    egui::TextEdit::singleline(&mut data.search_query)
+                        .hint_text("\u{1F50D} rsID, gene, keyword...")
+                        .desired_width(ui.available_width() - 16.0)
+                        .margin(egui::Margin::symmetric(8, 6)),
+                )
+                .changed();
+
+            ui.add_space(16.0);
+
+            // Tier filter
+            sidebar_heading(ui, "Confidence");
+            ui.add_space(6.0);
+
+            let (t1, t2, t3) = data.tier_counts();
+            let mut filter_changed = false;
+
+            filter_changed |= tier_checkbox(
+                ui,
+                &mut data.tier_filter[0],
+                "Reliable",
+                t1,
+                theme::TIER1,
+                theme::TIER1_BG,
+            );
+            filter_changed |= tier_checkbox(
+                ui,
+                &mut data.tier_filter[1],
+                "Probable",
+                t2,
+                theme::TIER2,
+                theme::TIER2_BG,
+            );
+            filter_changed |= tier_checkbox(
+                ui,
+                &mut data.tier_filter[2],
+                "Speculative",
+                t3,
+                theme::TIER3,
+                theme::TIER3_BG,
+            );
+
+            ui.add_space(16.0);
+
+            // Dataset toggles
+            sidebar_heading(ui, "Datasets");
+            ui.add_space(6.0);
+
+            egui::Frame::NONE
+                .fill(theme::BG_SURFACE)
+                .corner_radius(egui::CornerRadius::same(8))
+                .inner_margin(egui::Margin::same(10))
+                .show(ui, |ui| {
+                    ui.spacing_mut().item_spacing.y = 4.0;
+                    ui.checkbox(&mut data.annotation_config.clinvar, "ClinVar");
+                    ui.checkbox(&mut data.annotation_config.gwas, "GWAS Catalog");
+                    ui.checkbox(&mut data.annotation_config.frequencies, "Allele Freq.");
+                    ui.checkbox(&mut data.annotation_config.pharmacogenomics, "PharmGKB");
+                    ui.checkbox(&mut data.snpedia_enabled, "SNPedia");
                 });
 
-                if search_changed || filter_changed {
-                    data.apply_filter();
-                }
-
-                ui.add_space(16.0);
+            ui.add_space(6.0);
+            ui.horizontal_wrapped(|ui| {
+                ui.add_space(4.0);
+                ui.label(
+                    RichText::new("Re-analyze to apply dataset changes")
+                        .size(10.0)
+                        .color(theme::TEXT_MUTED),
+                );
             });
+
+            if search_changed || filter_changed {
+                data.apply_filter();
+            }
+
+            ui.add_space(16.0);
         });
+    });
 }
 
 fn sidebar_heading(ui: &mut egui::Ui, text: &str) {
@@ -384,9 +397,11 @@ fn draw_results_table(ui: &mut egui::Ui, data: &mut AppData) {
         });
 
     // Virtual scrolling table body
-    egui::ScrollArea::vertical()
-        .auto_shrink(false)
-        .show_rows(ui, row_height, num_rows, |ui, row_range| {
+    egui::ScrollArea::vertical().auto_shrink(false).show_rows(
+        ui,
+        row_height,
+        num_rows,
+        |ui, row_range| {
             for row_idx in row_range {
                 let result_idx = data.filtered_indices[row_idx];
                 let result = &report.results[result_idx];
@@ -409,8 +424,7 @@ fn draw_results_table(ui: &mut egui::Ui, data: &mut AppData) {
                             let widths = compute_column_widths(ui.available_width());
 
                             // rsID
-                            let rsid =
-                                result.variant.variant.rsid.as_deref().unwrap_or("\u{2014}");
+                            let rsid = result.variant.variant.rsid.as_deref().unwrap_or("\u{2014}");
                             table_cell(
                                 ui,
                                 rsid,
@@ -439,11 +453,7 @@ fn draw_results_table(ui: &mut egui::Ui, data: &mut AppData) {
                                     .corner_radius(egui::CornerRadius::same(4))
                                     .inner_margin(egui::Margin::symmetric(6, 2))
                                     .show(ui, |ui| {
-                                        ui.label(
-                                            RichText::new(cat)
-                                                .size(11.0)
-                                                .color(cat_color),
-                                        );
+                                        ui.label(RichText::new(cat).size(11.0).color(cat_color));
                                     });
                             });
 
@@ -491,7 +501,8 @@ fn draw_results_table(ui: &mut egui::Ui, data: &mut AppData) {
                     ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
                 }
             }
-        });
+        },
+    );
 }
 
 fn compute_column_widths(total: f32) -> [f32; 5] {
@@ -516,20 +527,9 @@ fn header_cell(ui: &mut egui::Ui, text: &str, width: f32) {
     });
 }
 
-fn table_cell(
-    ui: &mut egui::Ui,
-    text: &str,
-    width: f32,
-    family: egui::FontFamily,
-    color: Color32,
-) {
+fn table_cell(ui: &mut egui::Ui, text: &str, width: f32, family: egui::FontFamily, color: Color32) {
     ui.allocate_ui(Vec2::new(width, 24.0), |ui| {
-        ui.label(
-            RichText::new(text)
-                .size(12.0)
-                .family(family)
-                .color(color),
-        );
+        ui.label(RichText::new(text).size(12.0).family(family).color(color));
     });
 }
 

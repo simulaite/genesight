@@ -232,11 +232,7 @@ fn format_pill(ui: &mut egui::Ui, label: &str) {
         .corner_radius(egui::CornerRadius::same(12))
         .inner_margin(egui::Margin::symmetric(10, 4))
         .show(ui, |ui| {
-            ui.label(
-                RichText::new(label)
-                    .size(11.0)
-                    .color(theme::ACCENT),
-            );
+            ui.label(RichText::new(label).size(11.0).color(theme::ACCENT));
         });
 }
 
@@ -249,7 +245,12 @@ fn feature_chip(ui: &mut egui::Ui, icon: &str, title: &str, subtitle: &str, widt
                     ui.label(RichText::new(icon).size(16.0));
                     ui.vertical(|ui| {
                         ui.spacing_mut().item_spacing.y = 1.0;
-                        ui.label(RichText::new(title).size(12.0).strong().color(theme::TEXT_PRIMARY));
+                        ui.label(
+                            RichText::new(title)
+                                .size(12.0)
+                                .strong()
+                                .color(theme::TEXT_PRIMARY),
+                        );
                         ui.label(RichText::new(subtitle).size(10.0).color(theme::TEXT_MUTED));
                     });
                 });

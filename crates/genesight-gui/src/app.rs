@@ -146,11 +146,7 @@ impl eframe::App for GeneSightApp {
         if let Some(ref msg) = self.data.error_message.clone() {
             egui::TopBottomPanel::bottom("error_bar").show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    ui.label(
-                        egui::RichText::new(msg)
-                            .color(theme::DANGER)
-                            .size(12.0),
-                    );
+                    ui.label(egui::RichText::new(msg).color(theme::DANGER).size(12.0));
                     if ui.small_button("Dismiss").clicked() {
                         self.data.error_message = None;
                     }
@@ -188,16 +184,10 @@ impl eframe::App for GeneSightApp {
                                 *current_stage = desc;
                             }
                             AnalysisProgress::ParsedVariants(count) => {
-                                stages.push((
-                                    format!("Parsed {count} variants"),
-                                    true,
-                                ));
+                                stages.push((format!("Parsed {count} variants"), true));
                             }
                             AnalysisProgress::AnnotationComplete { annotated } => {
-                                stages.push((
-                                    format!("Annotated {annotated} variants"),
-                                    true,
-                                ));
+                                stages.push((format!("Annotated {annotated} variants"), true));
                             }
                             AnalysisProgress::Complete(report) => {
                                 self.data.report = Some(*report);
@@ -250,9 +240,7 @@ fn run_analysis(
     let file_data = match std::fs::read_to_string(&file_path) {
         Ok(d) => d,
         Err(e) => {
-            send(AnalysisProgress::Error(format!(
-                "Failed to read file: {e}"
-            )));
+            send(AnalysisProgress::Error(format!("Failed to read file: {e}")));
             return;
         }
     };

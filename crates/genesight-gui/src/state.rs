@@ -62,7 +62,11 @@ impl AppData {
         let main_db_path = find_database("genesight.db");
         let snpedia_db_path = {
             let p = find_database("snpedia.db");
-            if p.exists() { Some(p) } else { None }
+            if p.exists() {
+                Some(p)
+            } else {
+                None
+            }
         };
 
         Self {
@@ -194,10 +198,11 @@ pub fn short_category(cat: genesight_core::models::ResultCategory) -> &'static s
         ResultCategory::MonogenicDisease => "Disease",
         ResultCategory::CarrierStatus => "Carrier",
         ResultCategory::Pharmacogenomics => "Pharma",
-        ResultCategory::PolygenicRiskScore => "PRS",
+        ResultCategory::GwasAssociation => "GWAS",
         ResultCategory::PhysicalTrait => "Trait",
         ResultCategory::ComplexTrait => "Complex",
         ResultCategory::Ancestry => "Ancestry",
+        ResultCategory::ClinVarConflicting => "Conflicting",
     }
 }
 

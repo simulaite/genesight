@@ -3,12 +3,7 @@ use egui::{Align, Layout, RichText, Vec2};
 use crate::theme;
 
 /// Draw the analysis progress screen.
-pub fn draw(
-    ui: &mut egui::Ui,
-    file_name: &str,
-    stages: &[(String, bool)],
-    current_stage: &str,
-) {
+pub fn draw(ui: &mut egui::Ui, file_name: &str, stages: &[(String, bool)], current_stage: &str) {
     let available_width = ui.available_width();
 
     ui.vertical_centered(|ui| {
@@ -45,7 +40,8 @@ pub fn draw(
                     .show(ui, |ui| {
                         ui.set_min_width(card_width - 56.0);
 
-                        let total_steps = stages.len() + if current_stage.is_empty() { 0 } else { 1 };
+                        let total_steps =
+                            stages.len() + if current_stage.is_empty() { 0 } else { 1 };
                         let completed = stages.len();
 
                         // Completed stages
@@ -111,11 +107,7 @@ fn draw_step(ui: &mut egui::Ui, _step_num: usize, label: &str, state: StepState)
                                 .color(theme::SUCCESS),
                         );
                     });
-                ui.label(
-                    RichText::new(label)
-                        .size(13.0)
-                        .color(theme::TEXT_PRIMARY),
-                );
+                ui.label(RichText::new(label).size(13.0).color(theme::TEXT_PRIMARY));
             }
             StepState::Active => {
                 // Accent circle with number
@@ -140,10 +132,6 @@ fn draw_step(ui: &mut egui::Ui, _step_num: usize, label: &str, state: StepState)
 fn draw_connector(ui: &mut egui::Ui, _completed: bool) {
     ui.horizontal(|ui| {
         ui.add_space(14.0);
-        ui.label(
-            RichText::new("\u{2502}")
-                .size(10.0)
-                .color(theme::BORDER),
-        );
+        ui.label(RichText::new("\u{2502}").size(10.0).color(theme::BORDER));
     });
 }
