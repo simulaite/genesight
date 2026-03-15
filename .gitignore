@@ -30,3 +30,4 @@ Thumbs.db
 
 # PGP test data (real public-domain genomes, download separately)
 /tests/fixtures/pgp/*.txt
+__pycache__/
