@@ -15,7 +15,7 @@ ClinVar delivers variants as VCF via FTP, among other formats; these VCFs contai
 
 The GWAS Catalog "Top Hits" files contain a field "STRONGEST SNP-RISK ALLELE" (SNP + risk/effect allele; "?" if unknown) as well as a field "OR or BETA" for the effect; for older curations, OR<1 was sometimes inverted and the reported allele flipped accordingly, so that stored ORs are >1. citeturn7search0turn16search0turn16search12 This means: You must not blindly adopt risk alleles, but instead must check the respective catalog logic (date/version) and allele orientation, or switch to harmonized summary stats.
 
-image_group{"layout":"carousel","aspect_ratio":"16:9","query":["Illumina TOP BOT strand diagram","Illumina Infinium manifest IlmnStrand SourceStrand explanation","palindromic SNP A/T C/G strand ambiguity diagram","SNP strand flip plus minus complement A T C G diagram"],"num_per_query":1}
+![Strand Orientation and Palindromic SNP Ambiguity](../diagrams/strand_orientation.png)
 
 **Strand/allele normalization: reference algorithm (pseudocode)**
 Core principle: The comparison is performed on **(chr,pos,REF,ALT)** in a defined assembly. rsID is only a lookup aid.

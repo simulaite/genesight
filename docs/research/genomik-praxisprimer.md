@@ -33,15 +33,7 @@ Allele frequency is the population frequency of an allele and is a key signal fo
 
 **Inheritance patterns:** autosomal dominant/recessive, X-linked, mitochondrial (maternal). For mtDNA, heteroplasmy and tissue dependence additionally apply; consumer arrays are often unsuitable or only partially interpretable for these. citeturn37search21turn37search0turn37search3turn37search1
 
-```mermaid
-flowchart LR
-  DNA["DNA (Genom)"] -->|Transkription| pre_mRNA["prä-mRNA"]
-  pre_mRNA -->|Spleißen| mRNA["mRNA (Transkript)"]
-  mRNA -->|Translation (Codons)| Protein["Protein"]
-  DNA --> Promoter["Promoter/Regulatorik"]
-  mRNA --> UTR["5'/3' UTR (Regulation)"]
-  DNA --> ExonIntron["Exons + Introns"]
-```
+![Central Dogma of Molecular Biology](../diagrams/central_dogma.png)
 
 ## Laboratory and Measurement Methods
 
@@ -151,15 +143,7 @@ PharmCAT implements this logic as a pipeline; the Named Allele Matcher derives d
 
 ### Data Flow and Safety Gates
 
-```mermaid
-flowchart TD
-  Ingest["Ingestion: 23andMe/Ancestry TXT, VCF"] --> Detect["Detect: build + format + strand conventions"]
-  Detect --> Normalize1["Normalize: contigs, coords, REF/ALT, left-align indels"]
-  Normalize1 --> Strand["Allele/Strand harmonization + manifest/db reference"]
-  Strand --> Annotate["Annotate: ClinVar, gnomAD, GWAS-SSF, PGx tables"]
-  Annotate --> Interpret["Interpretation layer: zygosity, review status, confidence scoring"]
-  Interpret --> Report["Report: provenance + disclaimers + exportable evidence"]
-```
+![Pipeline Data Flow and Safety Gates](../diagrams/pipeline_safety_gates.png)
 
 The pipeline requires hard invariants:
 

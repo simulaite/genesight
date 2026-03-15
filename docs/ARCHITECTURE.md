@@ -49,21 +49,7 @@ This makes the library:
 
 ## Data Flow
 
-```
-┌─────────────┐     ┌──────────┐     ┌───────────┐     ┌──────────┐     ┌──────────┐
-│  DNA File   │ ──► │  Parser  │ ──► │ Annotator │ ──► │  Scorer  │ ──► │  Report  │
-│ (23andMe/   │     │          │     │           │     │          │     │ (MD/JSON │
-│  VCF/etc.)  │     │ → Vec<   │     │ → Vec<    │     │ → Vec<   │     │  /HTML)  │
-│             │     │ Variant> │     │ Annotated │     │ Scored   │     │          │
-│             │     │          │     │ Variant>  │     │ Result>  │     │          │
-└─────────────┘     └──────────┘     └─────┬─────┘     └──────────┘     └──────────┘
-                                           │
-                                    ┌──────┴──────┐
-                                    │  SQLite DB  │
-                                    │ (genesight  │
-                                    │    .db)     │
-                                    └─────────────┘
-```
+![Data Flow](diagrams/data_flow.png)
 
 ### Step by Step
 
@@ -239,24 +225,7 @@ INFO:
 
 ## Future: egui Desktop App (Phase 2)
 
-```
-┌─────────────────────────────────────────────────┐
-│  egui Window (Native)                           │
-│  ┌───────────────────────────────────────────┐  │
-│  │  egui Frontend (genesight-gui)            │  │
-│  │  - File selection (drag & drop)           │  │
-│  │  - Report display (tier-based)            │  │
-│  │  - Database management                    │  │
-│  └──────────────────┬────────────────────────┘  │
-│                     │ Direct function calls      │
-│  ┌──────────────────┴────────────────────────┐  │
-│  │  Rust Backend (genesight-core)            │  │
-│  │  - Parser, Annotator, Scorer, Report      │  │
-│  │  - SQLite DB Management                   │  │
-│  │  - Optional: local LLM (Ollama)           │  │
-│  └───────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────┘
-```
+![Desktop Architecture](diagrams/desktop_architecture.png)
 
 The egui app calls into core directly -- no IPC boundary needed:
 
