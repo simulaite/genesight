@@ -1,57 +1,57 @@
-# GeneSight – Architektur
+# GeneSight — Architecture
 
-## Design-Prinzipien
+## Design Principles
 
-1. **Privacy first** — DNA-Daten verlassen nie den Rechner des Nutzers
-2. **Offline-fähig** — Nach initialem Datenbank-Download keine Netzwerkverbindung nötig
-3. **Modular** — Core-Library ist unabhängig von CLI/Desktop/Web
-4. **Transparent** — Jedes Ergebnis zeigt Quelle und Konfidenz
+1. **Privacy first** — DNA data never leaves the user's machine
+2. **Offline-capable** — No network connection required after initial database download
+3. **Modular** — Core library is independent of CLI/Desktop/Web
+4. **Transparent** — Every result shows its source and confidence level
 
 ---
 
-## Crate-Struktur
+## Crate Structure
 
 ```
 genesight (workspace)
 │
-├── genesight-core          # Library — kein IO, kein Netzwerk, pure Logik
-│   ├── parser::*           # DNA-Dateien → Vec<Variant>
-│   ├── db::*               # SQLite-Queries (nimmt Connection als Parameter)
+├── genesight-core          # Library — no IO, no network, pure logic
+│   ├── parser::*           # DNA files → Vec<Variant>
+│   ├── db::*               # SQLite queries (takes Connection as parameter)
 │   ├── annotator::*        # Variant + DB → AnnotatedVariant
 │   ├── scorer::*           # AnnotatedVariant → ScoredResult + ConfidenceTier
 │   ├── report::*           # Vec<ScoredResult> → Report (MD/JSON/HTML)
-│   └── models::*           # Shared Types
+│   └── models::*           # Shared types
 │
-├── genesight-cli           # Binary — IO, Argparse, DB-Öffnung
-│   └── main.rs             # clap, rusqlite::Connection, ruft core auf
+├── genesight-cli           # Binary — IO, arg parsing, DB opening
+│   └── main.rs             # clap, rusqlite::Connection, calls into core
 │
 ├── genesight-server        # Binary — Axum API (Phase 3)
-│   └── main.rs             # Upload-Endpoint, ruft core auf
+│   └── main.rs             # Upload endpoint, calls into core
 │
-└── genesight-desktop       # Binary — Tauri App (Phase 2)
-    └── ...                 # Tauri commands wrappen core
+└── genesight-gui           # Binary — egui desktop app (Phase 2)
+    └── ...                 # Thin wrapper around core
 ```
 
-### Warum diese Trennung?
+### Why This Separation?
 
-`genesight-core` hat **keine** Abhängigkeiten auf:
-- Dateisystem-IO (bekommt `&[u8]` oder `&str`, nicht Pfade)
-- Netzwerk (bekommt `rusqlite::Connection`, öffnet sie nicht selbst)
-- CLI-Framework (kein clap)
-- Async Runtime (alles synchron)
+`genesight-core` has **no** dependencies on:
+- Filesystem IO (receives `&[u8]` or `&str`, not paths)
+- Network (receives `rusqlite::Connection`, does not open it itself)
+- CLI framework (no clap)
+- Async runtime (everything is synchronous)
 
-Das macht die Library:
-- **Testbar** — Unit-Tests brauchen kein Dateisystem
-- **Wiederverwendbar** — CLI, Tauri, Axum, WASM können alle dieselbe Library nutzen
-- **Kompilierbar für WASM** — Zukunftsoption: im Browser laufen lassen
+This makes the library:
+- **Testable** — Unit tests do not need a filesystem
+- **Reusable** — CLI, egui, Axum, WASM can all use the same library
+- **Compilable for WASM** — Future option: run in the browser
 
 ---
 
-## Datenfluss
+## Data Flow
 
 ```
 ┌─────────────┐     ┌──────────┐     ┌───────────┐     ┌──────────┐     ┌──────────┐
-│  DNA-Datei  │ ──► │  Parser  │ ──► │ Annotator │ ──► │  Scorer  │ ──► │  Report  │
+│  DNA File   │ ──► │  Parser  │ ──► │ Annotator │ ──► │  Scorer  │ ──► │  Report  │
 │ (23andMe/   │     │          │     │           │     │          │     │ (MD/JSON │
 │  VCF/etc.)  │     │ → Vec<   │     │ → Vec<    │     │ → Vec<   │     │  /HTML)  │
 │             │     │ Variant> │     │ Annotated │     │ Scored   │     │          │
@@ -65,38 +65,38 @@ Das macht die Library:
                                     └─────────────┘
 ```
 
-### Schritt für Schritt
+### Step by Step
 
-1. **Parser** liest die DNA-Datei und produziert `Vec<Variant>`
-   - Erkennt Format automatisch (23andMe vs AncestryDNA vs VCF)
-   - Normalisiert auf einheitliches `Variant`-Struct
-   - Filtert ungültige Zeilen (--calls, no-calls)
+1. **Parser** reads the DNA file and produces `Vec<Variant>`
+   - Automatically detects the format (23andMe vs AncestryDNA vs VCF)
+   - Normalizes to a unified `Variant` struct
+   - Filters invalid lines (--calls, no-calls)
 
-2. **Annotator** nimmt jede `Variant` und schlägt sie in der lokalen DB nach
-   - Batch-Queries für Performance (nicht 600K Einzel-Queries)
-   - Produziert `AnnotatedVariant` mit allen gefundenen Annotationen
+2. **Annotator** takes each `Variant` and looks it up in the local DB
+   - Batch queries for performance (not 600K individual queries)
+   - Produces `AnnotatedVariant` with all discovered annotations
 
-3. **Scorer** bewertet jede annotierte Variante
-   - Weist `ConfidenceTier` zu (Tier 1/2/3)
-   - Berechnet polygene Risikoscores (summiert über viele Varianten)
-   - Bestimmt Pharmakogenetik-Phänotypen (Metabolizer-Status)
+3. **Scorer** evaluates each annotated variant
+   - Assigns a `ConfidenceTier` (Tier 1/2/3)
+   - Calculates polygenic risk scores (summed across many variants)
+   - Determines pharmacogenomic phenotypes (metabolizer status)
 
-4. **Report** formatiert die Ergebnisse
-   - Gruppiert nach Tier und Kategorie
-   - Fügt Disclaimer und Attributions hinzu
-   - Output: Markdown, JSON, oder HTML
+4. **Report** formats the results
+   - Groups by tier and category
+   - Adds disclaimer and attributions
+   - Output: Markdown, JSON, or HTML
 
 ---
 
-## Kern-Datenmodelle
+## Core Data Models
 
 ```rust
-/// Eine einzelne DNA-Variante aus der Nutzerdatei
+/// A single DNA variant from the user's file
 pub struct Variant {
-    pub rsid: Option<String>,       // z.B. "rs1234567"
+    pub rsid: Option<String>,       // e.g. "rs1234567"
     pub chromosome: String,          // "1"-"22", "X", "Y", "MT"
-    pub position: u64,               // Genomische Position
-    pub genotype: Genotype,          // z.B. Genotype::Heterozygous('A', 'G')
+    pub position: u64,               // Genomic position
+    pub genotype: Genotype,          // e.g. Genotype::Heterozygous('A', 'G')
     pub source_format: SourceFormat, // TwentyThreeAndMe, AncestryDNA, VCF
 }
 
@@ -113,7 +113,7 @@ pub enum SourceFormat {
     Vcf,
 }
 
-/// Eine Variante mit allen Datenbank-Annotationen
+/// A variant with all database annotations
 pub struct AnnotatedVariant {
     pub variant: Variant,
     pub clinvar: Option<ClinVarAnnotation>,
@@ -123,19 +123,19 @@ pub struct AnnotatedVariant {
     pub pharmacogenomics: Option<PharmaAnnotation>,
 }
 
-/// Bewertetes Ergebnis mit Konfidenz
+/// Scored result with confidence level
 pub struct ScoredResult {
     pub variant: AnnotatedVariant,
     pub tier: ConfidenceTier,
     pub category: ResultCategory,
-    pub summary: String,            // Menschenlesbare Zusammenfassung
-    pub details: String,            // Ausführlichere Erklärung
+    pub summary: String,            // Human-readable summary
+    pub details: String,            // More detailed explanation
 }
 
 pub enum ConfidenceTier {
-    Tier1Reliable,    // >95% — klinisch validiert
-    Tier2Probable,    // 60-85% — statistische Assoziation
-    Tier3Speculative, // 50-65% — schwache Evidenz
+    Tier1Reliable,    // >95% — clinically validated
+    Tier2Probable,    // 60-85% — statistical association
+    Tier3Speculative, // 50-65% — weak evidence
 }
 
 pub enum ResultCategory {
@@ -151,29 +151,29 @@ pub enum ResultCategory {
 
 ---
 
-## Performance-Überlegungen
+## Performance Considerations
 
-### DNA-Datei-Größen
-- 23andMe: ~600K Varianten, ~15MB Textdatei
-- AncestryDNA: ~700K Varianten, ~20MB
-- WGS VCF: ~4-5M Varianten, ~1-5GB
+### DNA File Sizes
+- 23andMe: ~600K variants, ~15MB text file
+- AncestryDNA: ~700K variants, ~20MB
+- WGS VCF: ~4-5M variants, ~1-5GB
 
-### SQLite-Query-Strategie
+### SQLite Query Strategy
 
-**Nicht so:**
+**Not like this:**
 ```rust
-// ❌ 600.000 einzelne Queries
+// 600,000 individual queries
 for variant in variants {
     db.query("SELECT * FROM clinvar WHERE rsid = ?", &[&variant.rsid]);
 }
 ```
 
-**Sondern so:**
+**But like this:**
 ```rust
-// ✅ Batch-Queries mit temporärer Tabelle
+// Batch queries with a temporary table
 db.execute("CREATE TEMP TABLE user_variants (rsid TEXT PRIMARY KEY)");
-// Bulk-Insert der User-Varianten
-// Dann JOINs gegen die Annotationstabellen
+// Bulk-insert the user variants
+// Then JOIN against the annotation tables
 db.query("
     SELECT uv.rsid, c.*
     FROM user_variants uv
@@ -181,15 +181,15 @@ db.query("
 ");
 ```
 
-Erwartete Performance:
-- Parsing: <2 Sekunden für 600K Varianten
-- Annotation (Batch): <10 Sekunden gegen alle Datenbanken
-- Report-Generierung: <1 Sekunde
-- **Gesamt: <15 Sekunden** für einen kompletten Report
+Expected performance:
+- Parsing: <2 seconds for 600K variants
+- Annotation (batch): <10 seconds against all databases
+- Report generation: <1 second
+- **Total: <15 seconds** for a complete report
 
 ---
 
-## CLI-Interface (Phase 1)
+## CLI Interface (Phase 1)
 
 ```
 genesight 0.1.0
@@ -237,34 +237,34 @@ INFO:
 
 ---
 
-## Zukunft: Tauri Desktop App (Phase 2)
+## Future: egui Desktop App (Phase 2)
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  Tauri Window (WebView)                         │
+│  egui Window (Native)                           │
 │  ┌───────────────────────────────────────────┐  │
-│  │  SvelteKit / React Frontend               │  │
-│  │  - Datei-Auswahl (Drag & Drop)           │  │
-│  │  - Report-Anzeige (Tier-basiert)         │  │
-│  │  - Datenbank-Management                   │  │
+│  │  egui Frontend (genesight-gui)            │  │
+│  │  - File selection (drag & drop)           │  │
+│  │  - Report display (tier-based)            │  │
+│  │  - Database management                    │  │
 │  └──────────────────┬────────────────────────┘  │
-│                     │ Tauri Commands (IPC)       │
+│                     │ Direct function calls      │
 │  ┌──────────────────┴────────────────────────┐  │
 │  │  Rust Backend (genesight-core)            │  │
 │  │  - Parser, Annotator, Scorer, Report      │  │
 │  │  - SQLite DB Management                   │  │
-│  │  - Optional: lokales LLM (Ollama)         │  │
+│  │  - Optional: local LLM (Ollama)           │  │
 │  └───────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────┘
 ```
 
-Tauri-Commands sind dünne Wrapper:
+The egui app calls into core directly -- no IPC boundary needed:
 
 ```rust
-#[tauri::command]
-fn analyze_dna(file_path: String, db_path: String) -> Result<Report, String> {
-    let data = std::fs::read_to_string(&file_path).map_err(|e| e.to_string())?;
-    let conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
+/// Analyzes a DNA file and returns a report.
+fn analyze_dna(file_path: &str, db_path: &str) -> Result<Report, AppError> {
+    let data = std::fs::read_to_string(file_path)?;
+    let conn = Connection::open(db_path)?;
 
     let variants = genesight_core::parser::parse_auto(&data)?;
     let annotated = genesight_core::annotator::annotate_batch(&conn, &variants)?;

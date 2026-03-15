@@ -1,59 +1,59 @@
-# GeneSight – Confidence-Tier-System
+# GeneSight — Confidence Tier System
 
-## Überblick
+## Overview
 
-Jedes Ergebnis in GeneSight bekommt eine Zuverlässigkeitsstufe zugewiesen.
-Das ist nicht optional — es ist eine Kernfunktion des Tools.
+Every result in GeneSight is assigned a confidence tier.
+This is not optional — it is a core feature of the tool.
 
-Das Tier-System existiert, weil DNA-Analyse kein binäres Ja/Nein ist.
-Ein BRCA1-Mutationsnachweis hat eine fundamental andere Aussagekraft als
-ein polygener Risikoscore für Depression. Nutzer müssen das auf den ersten
-Blick erkennen können.
+The tier system exists because DNA analysis is not a binary yes/no.
+A BRCA1 mutation detection has a fundamentally different level of certainty than
+a polygenic risk score for depression. Users need to be able to recognize this
+at a glance.
 
 ---
 
-## Tier 1: Zuverlässig (>95% prädiktiver Wert)
+## Tier 1: Reliable (>95% predictive value)
 
-### Was gehört hierhin?
+### What belongs here?
 
-**Monogenetische Erkrankungen** — Ein einzelnes Gen/eine einzelne Variante ist direkt kausal.
+**Monogenic disorders** — A single gene/variant is directly causal.
 
-| Erkrankung | Gen | Vererbung | ClinVar-Status |
-|-----------|-----|-----------|---------------|
-| Sichelzellanämie | HBB | Autosomal rezessiv | Pathogenic (4★) |
-| Mukoviszidose | CFTR | Autosomal rezessiv | Pathogenic (4★) |
-| Huntington | HTT | Autosomal dominant | Pathogenic (4★) |
-| BRCA1/2 Brustkrebs-Risiko | BRCA1, BRCA2 | Autosomal dominant | Pathogenic (4★) |
-| Hämochromatose | HFE | Autosomal rezessiv | Pathogenic (3-4★) |
-| Faktor V Leiden | F5 | Autosomal dominant | Pathogenic (4★) |
+| Disorder | Gene | Inheritance | ClinVar Status |
+|----------|------|-------------|----------------|
+| Sickle cell disease | HBB | Autosomal recessive | Pathogenic (4★) |
+| Cystic fibrosis | CFTR | Autosomal recessive | Pathogenic (4★) |
+| Huntington's disease | HTT | Autosomal dominant | Pathogenic (4★) |
+| BRCA1/2 breast cancer risk | BRCA1, BRCA2 | Autosomal dominant | Pathogenic (4★) |
+| Hemochromatosis | HFE | Autosomal recessive | Pathogenic (3-4★) |
+| Factor V Leiden | F5 | Autosomal dominant | Pathogenic (4★) |
 
-**Trägerstatus** — Heterozygote Träger rezessiver Erkrankungen.
-Klinisch relevant für Familienplanung.
+**Carrier status** — Heterozygous carriers of recessive disorders.
+Clinically relevant for family planning.
 
-**Pharmakogenetik** — Wie der Körper Medikamente verstoffwechselt.
+**Pharmacogenomics** — How the body metabolizes medications.
 
-| Gen | Medikament(e) | PharmGKB Level | Effekt |
-|-----|--------------|----------------|--------|
-| CYP2D6 | Codein, Tramadol, Tamoxifen | 1A | Poor → keine Wirkung; Ultrarapid → Überdosis-Risiko |
-| CYP2C19 | Clopidogrel, Omeprazol | 1A | Poor → reduzierte Wirkung |
-| CYP2C9 + VKORC1 | Warfarin | 1A | Dosis-Anpassung nötig |
-| HLA-B*5701 | Abacavir | 1A | Hypersensitivitäts-Reaktion |
-| DPYD | 5-Fluorouracil | 1A | Schwere Toxizität bei Poor Metabolizer |
+| Gene | Medication(s) | PharmGKB Level | Effect |
+|------|---------------|----------------|--------|
+| CYP2D6 | Codeine, Tramadol, Tamoxifen | 1A | Poor → no effect; Ultrarapid → overdose risk |
+| CYP2C19 | Clopidogrel, Omeprazole | 1A | Poor → reduced efficacy |
+| CYP2C9 + VKORC1 | Warfarin | 1A | Dose adjustment required |
+| HLA-B*5701 | Abacavir | 1A | Hypersensitivity reaction |
+| DPYD | 5-Fluorouracil | 1A | Severe toxicity in poor metabolizers |
 
-**Einfache Merkmale** — Wenige Gene, gut verstanden.
+**Simple traits** — Few genes, well understood.
 
-| Merkmal | Gen/SNP | Genauigkeit |
-|---------|---------|-------------|
-| Laktosetoleranz | MCM6 (rs4988235) | >95% |
-| Ohrenschmalz-Typ | ABCC11 (rs17822931) | >95% |
-| Asparagus-Geruch | Mehrere SNPs nahe OR2M7 | ~90% |
-| Bitterschmecker (PTC) | TAS2R38 | >90% |
+| Trait | Gene/SNP | Accuracy |
+|-------|----------|----------|
+| Lactose tolerance | MCM6 (rs4988235) | >95% |
+| Earwax type | ABCC11 (rs17822931) | >95% |
+| Asparagus odor detection | Multiple SNPs near OR2M7 | ~90% |
+| Bitter taster (PTC) | TAS2R38 | >90% |
 
-### Logik für Tier-1-Zuweisung
+### Logic for Tier 1 assignment
 
 ```rust
 fn is_tier1(annotation: &Annotation) -> bool {
-    // ClinVar: pathogenic + Review ≥ 2 Sterne
+    // ClinVar: pathogenic + review >= 2 stars
     if let Some(cv) = &annotation.clinvar {
         if cv.significance == "Pathogenic"
            && cv.review_stars >= 2 {
@@ -61,14 +61,14 @@ fn is_tier1(annotation: &Annotation) -> bool {
         }
     }
 
-    // PharmGKB: Evidence Level 1A oder 1B
+    // PharmGKB: evidence level 1A or 1B
     if let Some(pgkb) = &annotation.pharmacogenomics {
         if pgkb.evidence_level.starts_with("1") {
             return true;
         }
     }
 
-    // SNPedia: Magnitude ≥ 4 UND in ClinVar bestätigt
+    // SNPedia: magnitude >= 4 AND confirmed in ClinVar
     if let Some(snp) = &annotation.snpedia {
         if snp.magnitude >= 4.0 && annotation.clinvar.is_some() {
             return true;
@@ -81,47 +81,47 @@ fn is_tier1(annotation: &Annotation) -> bool {
 
 ---
 
-## Tier 2: Wahrscheinlich (60-85% prädiktiver Wert)
+## Tier 2: Probable (60-85% predictive value)
 
-### Was gehört hierhin?
+### What belongs here?
 
-**Polygene Risikoscores (PRS)** — Hunderte bis tausende Varianten wirken zusammen.
-Kein einzelner SNP ist kausal, aber in Kombination ergibt sich ein statistisches Risikoprofil.
+**Polygenic risk scores (PRS)** — Hundreds to thousands of variants act together.
+No single SNP is causal, but in combination they produce a statistical risk profile.
 
-| Erkrankung/Trait | Anzahl SNPs | Erkl. Varianz | Aussagekraft |
-|-----------------|-------------|---------------|-------------|
-| Koronare Herzkrankheit | ~1.7M | ~15% | Oberes Quintil: 3x Risiko |
-| Typ-2-Diabetes | ~400K | ~10% | Oberes Quintil: 2.5x Risiko |
-| Bluthochdruck | ~900K | ~8% | Moderat prädiktiv |
-| BMI/Adipositas | ~700K | ~6% | Schwach-moderat prädiktiv |
+| Disorder/Trait | Number of SNPs | Explained variance | Predictive power |
+|----------------|----------------|-------------------|------------------|
+| Coronary artery disease | ~1.7M | ~15% | Top quintile: 3x risk |
+| Type 2 diabetes | ~400K | ~10% | Top quintile: 2.5x risk |
+| Hypertension | ~900K | ~8% | Moderately predictive |
+| BMI/Obesity | ~700K | ~6% | Weakly to moderately predictive |
 
-**Wichtig:** "Oberes Quintil: 3x Risiko" heißt NICHT "du bekommst das".
-Es heißt: "In einer Population ist dein genetisches Risiko höher als bei 80% der Menschen."
-Lebensstil, Ernährung und Umwelt sind oft wichtiger.
+**Important:** "Top quintile: 3x risk" does NOT mean "you will get this."
+It means: "In a population, your genetic risk is higher than 80% of people."
+Lifestyle, diet, and environment are often more important.
 
-**Körperliche Merkmale mit mehreren Genen:**
+**Physical traits involving multiple genes:**
 
-| Merkmal | Genauigkeit |
-|---------|-------------|
-| Haarfarbe | ~70-85% |
-| Sommersprossen | ~70-80% |
-| Glatzenrisiko (männlich) | ~70-80% |
-| Augenfarbe | ~75-90% (blau vs. braun gut, Mischfarben schwächer) |
+| Trait | Accuracy |
+|-------|----------|
+| Hair color | ~70-85% |
+| Freckles | ~70-80% |
+| Baldness risk (male) | ~70-80% |
+| Eye color | ~75-90% (blue vs. brown good, mixed colors weaker) |
 
-### Logik für Tier-2-Zuweisung
+### Logic for Tier 2 assignment
 
 ```rust
 fn is_tier2(annotation: &Annotation) -> bool {
-    // GWAS: Signifikante Assoziation mit moderater Effektstärke
+    // GWAS: significant association with moderate effect size
     if let Some(gwas) = &annotation.gwas_hits {
         let significant = gwas.iter().any(|g|
-            g.p_value < 5e-8  // Genomweite Signifikanz
+            g.p_value < 5e-8  // genome-wide significance
             && g.odds_ratio.map_or(false, |or| or > 1.1 && or < 3.0)
         );
         if significant { return true; }
     }
 
-    // SNPedia: Magnitude 2-3.9, kein ClinVar-Eintrag
+    // SNPedia: magnitude 2-3.9, no ClinVar entry
     if let Some(snp) = &annotation.snpedia {
         if snp.magnitude >= 2.0 && snp.magnitude < 4.0
            && annotation.clinvar.is_none() {
@@ -129,7 +129,7 @@ fn is_tier2(annotation: &Annotation) -> bool {
         }
     }
 
-    // PharmGKB: Evidence Level 2A oder 2B
+    // PharmGKB: evidence level 2A or 2B
     if let Some(pgkb) = &annotation.pharmacogenomics {
         if pgkb.evidence_level.starts_with("2") {
             return true;
@@ -142,44 +142,44 @@ fn is_tier2(annotation: &Annotation) -> bool {
 
 ---
 
-## Tier 3: Spekulativ (50-65% prädiktiver Wert)
+## Tier 3: Speculative (50-65% predictive value)
 
-### Was gehört hierhin?
+### What belongs here?
 
-**Komplexe psychiatrische Erkrankungen:**
+**Complex psychiatric disorders:**
 
-| Erkrankung | Erblichkeit (Zwillinge) | Erkl. durch SNPs | Einzelner SNP-Effekt |
-|-----------|------------------------|-------------------|---------------------|
-| Schizophrenie | ~80% | ~7% | Minimal |
-| Bipolare Störung | ~70% | ~5% | Minimal |
-| Major Depression | ~40% | ~2% | Winzig |
-| Autismus | ~50-90% | ~3% | Minimal |
-| ADHS | ~70-80% | ~3% | Minimal |
+| Disorder | Heritability (twins) | Explained by SNPs | Individual SNP effect |
+|----------|---------------------|-------------------|----------------------|
+| Schizophrenia | ~80% | ~7% | Minimal |
+| Bipolar disorder | ~70% | ~5% | Minimal |
+| Major depression | ~40% | ~2% | Tiny |
+| Autism | ~50-90% | ~3% | Minimal |
+| ADHD | ~70-80% | ~3% | Minimal |
 
-Die hohe Erblichkeit in Zwillingsstudien vs. niedrige erklärte Varianz durch
-bekannte SNPs = "Missing Heritability". Gen-Umwelt-Interaktionen, Epigenetik,
-und seltene Varianten spielen große Rollen.
+The high heritability in twin studies vs. low explained variance by
+known SNPs = "missing heritability." Gene-environment interactions, epigenetics,
+and rare variants play major roles.
 
-**Persönlichkeit & Kognition:**
+**Personality and cognition:**
 
-| Trait | SNP-Effekt | Nutzen eines Tests |
-|-------|-----------|-------------------|
-| Intelligenz (IQ) | ~0.01% pro SNP | Praktisch keiner |
-| Risikobereitschaft | Minimal | Praktisch keiner |
-| Neurotizismus | Minimal | Praktisch keiner |
+| Trait | SNP effect | Usefulness of testing |
+|-------|-----------|----------------------|
+| Intelligence (IQ) | ~0.01% per SNP | Practically none |
+| Risk-taking | Minimal | Practically none |
+| Neuroticism | Minimal | Practically none |
 
-**Sportliche Eignung:**
+**Athletic aptitude:**
 
-| Gen/SNP | Behauptung | Realität |
-|---------|-----------|---------|
-| ACTN3 (rs1815739) | "Sprinter-Gen" | Erklärt <1% der Varianz in sportl. Leistung |
-| ACE I/D | Ausdauer vs. Kraft | Inkonsistente Studienlage |
+| Gene/SNP | Claim | Reality |
+|----------|-------|---------|
+| ACTN3 (rs1815739) | "Sprinter gene" | Explains <1% of variance in athletic performance |
+| ACE I/D | Endurance vs. strength | Inconsistent study results |
 
-### Logik für Tier-3-Zuweisung
+### Logic for Tier 3 assignment
 
 ```rust
 fn is_tier3(annotation: &Annotation) -> bool {
-    // GWAS: Schwache Assoziation
+    // GWAS: weak association
     if let Some(gwas) = &annotation.gwas_hits {
         let weak = gwas.iter().any(|g|
             g.p_value < 5e-8
@@ -188,14 +188,14 @@ fn is_tier3(annotation: &Annotation) -> bool {
         if weak { return true; }
     }
 
-    // SNPedia: Niedrige Magnitude
+    // SNPedia: low magnitude
     if let Some(snp) = &annotation.snpedia {
         if snp.magnitude > 0.0 && snp.magnitude < 2.0 {
             return true;
         }
     }
 
-    // PharmGKB: Evidence Level 3 oder 4
+    // PharmGKB: evidence level 3 or 4
     if let Some(pgkb) = &annotation.pharmacogenomics {
         if pgkb.evidence_level.starts_with("3")
            || pgkb.evidence_level.starts_with("4") {
@@ -209,73 +209,72 @@ fn is_tier3(annotation: &Annotation) -> bool {
 
 ---
 
-## Report-Darstellung
+## Report Presentation
 
-### CLI-Output (Beispiel)
+### CLI Output (Example)
 
 ```
 ═══════════════════════════════════════════════════════════
   GeneSight Report — 2026-03-14
-  Datei: meine_dna.txt (23andMe Format)
-  Varianten analysiert: 637,291
-  Annotierte Varianten: 12,847
+  File: my_dna.txt (23andMe format)
+  Variants analyzed: 637,291
+  Annotated variants: 12,847
 ═══════════════════════════════════════════════════════════
 
-🟢 TIER 1 — Zuverlässig (klinisch validiert)
+🟢 TIER 1 — Reliable (clinically validated)
 ───────────────────────────────────────────────────────────
 
-  PHARMAKOGENETIK
+  PHARMACOGENOMICS
   ┌─────────────┬──────────────┬───────────────────────────┐
-  │ Gen         │ Medikament   │ Status                    │
+  │ Gene        │ Medication   │ Status                    │
   ├─────────────┼──────────────┼───────────────────────────┤
-  │ CYP2D6      │ Codein       │ ⚠ Poor Metabolizer        │
+  │ CYP2D6      │ Codeine      │ ⚠ Poor Metabolizer        │
   │ CYP2C19     │ Clopidogrel  │ ✓ Normal Metabolizer      │
   └─────────────┴──────────────┴───────────────────────────┘
-  Quelle: PharmGKB (Level 1A) + ClinVar
+  Source: PharmGKB (Level 1A) + ClinVar
 
-  TRÄGERSTATUS
-  • Mukoviszidose (CFTR): Heterozygot — Träger, nicht betroffen
-    Quelle: ClinVar (4★ Review)
+  CARRIER STATUS
+  • Cystic fibrosis (CFTR): Heterozygous — carrier, not affected
+    Source: ClinVar (4★ review)
 
-  MERKMALE
-  • Laktosetoleranz: Wahrscheinlich laktoseintolerant (CC bei rs4988235)
-  • Ohrenschmalz: Trockener Typ
+  TRAITS
+  • Lactose tolerance: Likely lactose intolerant (CC at rs4988235)
+  • Earwax: Dry type
 
-🟡 TIER 2 — Wahrscheinlich (statistische Assoziation)
+🟡 TIER 2 — Probable (statistical association)
 ───────────────────────────────────────────────────────────
 
-  POLYGENE RISIKOSCORES
-  • Koronare Herzkrankheit: 72. Perzentil (leicht erhöht)
-    ⚠ Lebensstil hat größeren Einfluss als Genetik
-  • Typ-2-Diabetes: 45. Perzentil (durchschnittlich)
+  POLYGENIC RISK SCORES
+  • Coronary artery disease: 72nd percentile (slightly elevated)
+    ⚠ Lifestyle has a greater impact than genetics
+  • Type 2 diabetes: 45th percentile (average)
 
-  MERKMALE
-  • Glatzenrisiko: Erhöht (68% Wahrscheinlichkeit bis 50)
-  • Sommersprossen: Wahrscheinlich vorhanden
+  TRAITS
+  • Baldness risk: Elevated (68% probability by age 50)
+  • Freckles: Likely present
 
-🔴 TIER 3 — Spekulativ (schwache Evidenz)
+🔴 TIER 3 — Speculative (weak evidence)
 ───────────────────────────────────────────────────────────
 
-  ⚠ Die folgenden Ergebnisse haben geringe prädiktive
-    Aussagekraft und sollten NICHT für Entscheidungen
-    herangezogen werden.
+  ⚠ The following results have low predictive value
+    and should NOT be used for decision-making.
 
-  • ACTN3 (Muskeltyp): Mischtyp (Ausdauer/Kraft)
-  • Koffein-Metabolismus: Schnell (CYP1A2 rs762551 AA)
+  • ACTN3 (muscle type): Mixed type (endurance/strength)
+  • Caffeine metabolism: Fast (CYP1A2 rs762551 AA)
 
 ───────────────────────────────────────────────────────────
-⚕ DISCLAIMER: Dieser Report ist informativ, nicht
-  diagnostisch. Für medizinische Entscheidungen
-  konsultieren Sie einen Arzt oder genetischen Berater.
+⚕ DISCLAIMER: This report is informational, not
+  diagnostic. For medical decisions, consult a
+  physician or genetic counselor.
 ───────────────────────────────────────────────────────────
 ```
 
 ---
 
-## Was GeneSight bewusst NICHT zeigt
+## What GeneSight deliberately does NOT show
 
-1. **Keine Lebensdauer-Vorhersagen**
-2. **Keine IQ-Scores oder "Intelligenz-Gene"**
-3. **Keine Rassen-/Ethnizitäts-basierten Risikobewertungen** ohne Kontext
-4. **Keine Ergebnisse ohne Confidence-Tier**
-5. **Keine Ergebnisse die wie Diagnosen klingen** — immer probabilistisch formuliert
+1. **No lifespan predictions**
+2. **No IQ scores or "intelligence genes"**
+3. **No race-/ethnicity-based risk assessments** without context
+4. **No results without a confidence tier**
+5. **No results that sound like diagnoses** — always phrased probabilistically

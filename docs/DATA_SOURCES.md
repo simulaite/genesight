@@ -1,36 +1,36 @@
-# GeneSight – Datenquellen & Zugang
+# GeneSight — Data Sources & Access
 
-## Übersicht
+## Overview
 
-GeneSight nutzt ausschließlich öffentlich zugängliche, wissenschaftlich kuratierte Datenbanken.
-Alle Daten werden lokal vorgehalten — es werden zur Laufzeit keine externen Anfragen gestellt.
+GeneSight exclusively uses publicly available, scientifically curated databases.
+All data is stored locally — no external requests are made at runtime.
 
 ---
 
 ## 1. ClinVar (NCBI)
 
-**Was:** Öffentliches Archiv klinisch klassifizierter menschlicher Varianten. Über 3 Millionen Varianten mit Pathogenitäts-Bewertungen (pathogenic, likely pathogenic, benign, likely benign, uncertain significance).
+**What:** Public archive of clinically classified human variants. Over 3 million variants with pathogenicity assessments (pathogenic, likely pathogenic, benign, likely benign, uncertain significance).
 
-**Warum:** Goldstandard für klinisch relevante Varianten. Jede Variante hat einen Review-Status (0-4 Sterne), der die Evidenzqualität angibt.
+**Why:** Gold standard for clinically relevant variants. Each variant has a review status (0-4 stars) indicating the quality of evidence.
 
-**Lizenz:** Public Domain (US Government Work)
+**License:** Public Domain (US Government Work)
 
-**Zugang:**
+**Access:**
 - FTP: `https://ftp.ncbi.nlm.nih.gov/pub/clinvar/`
-- Relevante Dateien:
-  - `tab_delimited/variant_summary.txt.gz` (~100MB) — Hauptdatei mit allen Varianten
-  - `vcf_GRCh38/clinvar.vcf.gz` — VCF-Format für GRCh38
-  - `vcf_GRCh37/clinvar.vcf.gz` — VCF-Format für GRCh37/hg19
+- Relevant files:
+  - `tab_delimited/variant_summary.txt.gz` (~100MB) — Main file with all variants
+  - `vcf_GRCh38/clinvar.vcf.gz` — VCF format for GRCh38
+  - `vcf_GRCh37/clinvar.vcf.gz` — VCF format for GRCh37/hg19
 - API: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/`
-- Update-Zyklus: Wöchentlich (jeden Sonntag)
+- Update cycle: Weekly (every Sunday)
 
-**Felder die wir nutzen:**
-- `RS# (dbSNP)` — rsID für Matching
+**Fields we use:**
+- `RS# (dbSNP)` — rsID for matching
 - `ClinicalSignificance` — pathogenic/benign/etc.
-- `ReviewStatus` — Evidenz-Level (Sterne)
-- `PhenotypeList` — Assoziierte Erkrankungen
-- `GeneSymbol` — Gen-Name
-- `Assembly` — GRCh37 oder GRCh38
+- `ReviewStatus` — Evidence level (stars)
+- `PhenotypeList` — Associated conditions
+- `GeneSymbol` — Gene name
+- `Assembly` — GRCh37 or GRCh38
 
 **Attribution:** "ClinVar data provided by the National Center for Biotechnology Information (NCBI), U.S. National Library of Medicine."
 
@@ -38,40 +38,40 @@ Alle Daten werden lokal vorgehalten — es werden zur Laufzeit keine externen An
 
 ## 2. SNPedia
 
-**Was:** Wiki-basierte Datenbank mit ~112.000 SNPs. Jeder Eintrag verknüpft Varianten mit Peer-reviewed-Studien und enthält menschenlesbare Zusammenfassungen. Unique: Magnitude-Score (0-10) der die Relevanz einer Variante einschätzt.
+**What:** Wiki-based database with ~112,000 SNPs. Each entry links variants to peer-reviewed studies and includes human-readable summaries. Unique feature: Magnitude score (0-10) that estimates the relevance of a variant.
 
-**Warum:** Beste Quelle für verständliche, kontextualisierte Beschreibungen. ClinVar sagt "pathogenic", SNPedia erklärt was das bedeutet.
+**Why:** Best source for understandable, contextualized descriptions. ClinVar says "pathogenic", SNPedia explains what that means.
 
-**Lizenz:** CC-BY-NC-SA 3.0 US
-- ✅ Open-Source-Nutzung: erlaubt
-- ✅ Persönliche Nutzung: erlaubt
-- ❌ Kommerzielle Nutzung: nur mit separater Lizenz
-- ⚠️ Share-Alike: Abgeleitete Werke müssen unter gleicher Lizenz stehen
+**License:** CC-BY-NC-SA 3.0 US
+- Open-source use: permitted
+- Personal use: permitted
+- Commercial use: only with a separate license
+- Share-Alike: derivative works must be released under the same license
 
-**Zugang:**
+**Access:**
 - MediaWiki API: `https://www.snpedia.com/w/api.php`
-- Bulk-Export via API möglich (kein offizieller Dump)
-- Rate Limiting: Mindestens 3 Sekunden zwischen Requests
-- robots.txt respektieren!
+- Bulk export via API possible (no official dump available)
+- Rate limiting: At least 3 seconds between requests
+- Respect robots.txt!
 
-**Scraping-Strategie:**
+**Scraping strategy:**
 ```
-1. Alle SNP-Seiten listen: api.php?action=query&list=allpages&apnamespace=0&apprefix=Rs
-2. Für jede Seite: api.php?action=parse&page=Rs1234567&prop=wikitext
-3. Genotyp-Seiten: api.php?action=parse&page=Rs1234567(A;G)
-4. Relevante Felder extrahieren: magnitude, repute, summary, genotype-specific text
+1. List all SNP pages: api.php?action=query&list=allpages&apnamespace=0&apprefix=Rs
+2. For each page: api.php?action=parse&page=Rs1234567&prop=wikitext
+3. Genotype pages: api.php?action=parse&page=Rs1234567(A;G)
+4. Extract relevant fields: magnitude, repute, summary, genotype-specific text
 ```
 
-**Existierende Tools:**
-- `TheModernPromethease` (GitHub) — R-basierter Scraper
-- `SNPedia-Scraper` (GitHub) — Python-Scraper mit SQLite-Output (~160MB)
+**Existing tools:**
+- `TheModernPromethease` (GitHub) — R-based scraper
+- `SNPedia-Scraper` (GitHub) — Python scraper with SQLite output (~160MB)
 
-**Felder die wir nutzen:**
-- `rsid` — SNP-Identifier
-- `magnitude` — Relevanz (0-10, höher = wichtiger)
-- `repute` — "good", "bad", oder neutral
-- `summary` — Menschenlesbare Zusammenfassung
-- Genotyp-spezifische Beschreibungen (z.B. was AA vs AG vs GG bedeutet)
+**Fields we use:**
+- `rsid` — SNP identifier
+- `magnitude` — Relevance (0-10, higher = more important)
+- `repute` — "good", "bad", or neutral
+- `summary` — Human-readable summary
+- Genotype-specific descriptions (e.g., what AA vs AG vs GG means)
 
 **Attribution:** "SNPedia content is licensed under Creative Commons Attribution-NonCommercial-ShareAlike 3.0 United States License. Source: https://www.snpedia.com"
 
@@ -79,27 +79,27 @@ Alle Daten werden lokal vorgehalten — es werden zur Laufzeit keine externen An
 
 ## 3. GWAS Catalog (NHGRI-EBI)
 
-**Was:** Kuratierter Katalog aller veröffentlichten Genome-Wide Association Studies. Verknüpft SNPs mit Traits/Erkrankungen inkl. Effektstärke (Odds Ratio, Beta) und p-Wert.
+**What:** Curated catalog of all published Genome-Wide Association Studies. Links SNPs to traits/diseases including effect size (Odds Ratio, Beta) and p-value.
 
-**Warum:** Einzige umfassende Quelle für polygene Assoziationen. Notwendig für Tier-2-Risikoscores.
+**Why:** Only comprehensive source for polygenic associations. Required for Tier 2 risk scores.
 
-**Lizenz:** Open Access (EMBL-EBI, öffentlich finanziert)
+**License:** Open Access (EMBL-EBI, publicly funded)
 
-**Zugang:**
+**Access:**
 - REST API v2: `https://www.ebi.ac.uk/gwas/rest/api/v2/`
-- Bulk-Download: `https://www.ebi.ac.uk/gwas/api/search/downloads/full`
+- Bulk download: `https://www.ebi.ac.uk/gwas/api/search/downloads/full`
 - FTP: `ftp://ftp.ebi.ac.uk/pub/databases/gwas/`
-- Relevante Datei: `gwas-catalog-associations_ontology-annotated.tsv` (~50MB)
-- Update-Zyklus: Wöchentlich
+- Relevant file: `gwas-catalog-associations_ontology-annotated.tsv` (~50MB)
+- Update cycle: Weekly
 
-**Felder die wir nutzen:**
+**Fields we use:**
 - `SNPS` — rsID(s)
-- `DISEASE/TRAIT` — Assoziierter Trait
-- `OR or BETA` — Effektstärke
-- `P-VALUE` — Statistische Signifikanz
-- `RISK ALLELE FREQUENCY` — Häufigkeit des Risiko-Allels
-- `MAPPED_GENE` — Zugeordnetes Gen
-- `STUDY` — PubMed-ID der Originalstudie
+- `DISEASE/TRAIT` — Associated trait
+- `OR or BETA` — Effect size
+- `P-VALUE` — Statistical significance
+- `RISK ALLELE FREQUENCY` — Frequency of the risk allele
+- `MAPPED_GENE` — Mapped gene
+- `STUDY` — PubMed ID of the original study
 
 **Attribution:** "GWAS Catalog data provided by NHGRI-EBI GWAS Catalog. Buniello A, et al. Nucleic Acids Research, 2019."
 
@@ -107,21 +107,21 @@ Alle Daten werden lokal vorgehalten — es werden zur Laufzeit keine externen An
 
 ## 4. dbSNP (NCBI)
 
-**Was:** Referenzdatenbank für alle bekannten Single Nucleotide Polymorphisms. Jeder SNP hat eine rs-Nummer, die als universeller Identifier dient.
+**What:** Reference database for all known Single Nucleotide Polymorphisms. Each SNP has an rs number that serves as a universal identifier.
 
-**Warum:** Liefert Allelfrequenzen (wie häufig ist meine Variante in verschiedenen Populationen) und ist der Schlüssel zum Verknüpfen aller anderen Datenbanken.
+**Why:** Provides allele frequencies (how common is my variant across different populations) and is the key to linking all other databases.
 
-**Lizenz:** Public Domain (US Government Work)
+**License:** Public Domain (US Government Work)
 
-**Zugang:**
+**Access:**
 - FTP: `https://ftp.ncbi.nih.gov/snp/`
-- Vollständiger Dump: ~15GB (wir brauchen nur ein Subset)
-- Relevante Dateien:
-  - `organisms/human_9606/VCF/` — VCF-Files mit Allelfrequenzen
-  - Alternativ: gnomAD für bessere Frequenzdaten
+- Full dump: ~15GB (we only need a subset)
+- Relevant files:
+  - `organisms/human_9606/VCF/` — VCF files with allele frequencies
+  - Alternative: gnomAD for better frequency data
 - API: `https://api.ncbi.nlm.nih.gov/variation/v0/`
 
-**Hinweis:** Für Allelfrequenzen ist gnomAD die bessere Quelle. dbSNP primär für rs-Nummer-Lookups und als Referenz.
+**Note:** For allele frequencies, gnomAD is the better source. dbSNP is primarily used for rs number lookups and as a reference.
 
 **Attribution:** "dbSNP data provided by the National Center for Biotechnology Information (NCBI)."
 
@@ -129,23 +129,23 @@ Alle Daten werden lokal vorgehalten — es werden zur Laufzeit keine externen An
 
 ## 5. gnomAD (Broad Institute)
 
-**Was:** Genome Aggregation Database — Allelfrequenzen aus >250.000 Exomen und >76.000 Genomen, aufgeschlüsselt nach Population (European, African, East Asian, South Asian, etc.).
+**What:** Genome Aggregation Database — allele frequencies from >250,000 exomes and >76,000 genomes, broken down by population (European, African, East Asian, South Asian, etc.).
 
-**Warum:** Beantwortet die Frage "Wie selten ist meine Variante?" — entscheidend für die Einschätzung klinischer Relevanz.
+**Why:** Answers the question "How rare is my variant?" — critical for assessing clinical relevance.
 
-**Lizenz:** Open Access (ODC Open Database License für Daten)
+**License:** Open Access (ODC Open Database License for data)
 
-**Zugang:**
+**Access:**
 - Download: `https://gnomad.broadinstitute.org/downloads`
-- Vollständig: Multi-GB
-- Für unser Tool: Nur Sites-VCF mit Frequenzen (~1-2GB für Exome)
-- API: GraphQL unter `https://gnomad.broadinstitute.org/api`
+- Full dataset: Multi-GB
+- For our tool: Only sites VCF with frequencies (~1-2GB for exomes)
+- API: GraphQL at `https://gnomad.broadinstitute.org/api`
 
-**Felder die wir nutzen:**
-- `rsid` / Chromosom+Position
-- `AF` — Gesamte Allelfrequenz
-- `AF_popmax` — Höchste Frequenz in irgendeiner Population
-- Populations-spezifische Frequenzen (afr, amr, asj, eas, fin, nfe, sas)
+**Fields we use:**
+- `rsid` / Chromosome+Position
+- `AF` — Overall allele frequency
+- `AF_popmax` — Highest frequency in any population
+- Population-specific frequencies (afr, amr, asj, eas, fin, nfe, sas)
 
 **Attribution:** "gnomAD data provided by the Genome Aggregation Database (gnomAD), Broad Institute."
 
@@ -153,68 +153,68 @@ Alle Daten werden lokal vorgehalten — es werden zur Laufzeit keine externen An
 
 ## 6. PharmGKB
 
-**Was:** Curated Knowledge Base für Pharmakogenetik — welche Gene beeinflussen die Wirkung welcher Medikamente.
+**What:** Curated knowledge base for pharmacogenetics — which genes influence the effect of which drugs.
 
-**Warum:** Pharmakogenetik ist einer der zuverlässigsten (Tier 1) Anwendungsbereiche der DNA-Analyse.
+**Why:** Pharmacogenetics is one of the most reliable (Tier 1) application areas of DNA analysis.
 
-**Lizenz:** CC-BY-SA 4.0 (akademisch/nicht-kommerziell frei, kommerziell: Lizenz erforderlich)
+**License:** CC-BY-SA 4.0 (free for academic/non-commercial use, commercial: license required)
 
-**Zugang:**
+**Access:**
 - Download: `https://www.pharmgkb.org/downloads`
-- Relevante Dateien:
-  - `clinical_annotations.tsv` — Klinische Annotationen
-  - `var_drug_ann.tsv` — Varianten-Medikamenten-Assoziationen
-  - `clinical_ann_alleles.tsv` — Allel-spezifische Informationen
-- Registrierung erforderlich für Bulk-Download
+- Relevant files:
+  - `clinical_annotations.tsv` — Clinical annotations
+  - `var_drug_ann.tsv` — Variant-drug associations
+  - `clinical_ann_alleles.tsv` — Allele-specific information
+- Registration required for bulk download
 - API: `https://api.pharmgkb.org/`
 
-**Felder die wir nutzen:**
-- Variante (rsID)
-- Medikament
-- Phänotyp-Kategorie (z.B. "Poor Metabolizer", "Ultrarapid Metabolizer")
-- Evidenz-Level (1A, 1B, 2A, 2B, 3, 4)
-- Klinische Empfehlung
+**Fields we use:**
+- Variant (rsID)
+- Drug
+- Phenotype category (e.g., "Poor Metabolizer", "Ultrarapid Metabolizer")
+- Evidence level (1A, 1B, 2A, 2B, 3, 4)
+- Clinical recommendation
 
 **Attribution:** "PharmGKB data © PharmGKB, licensed under CC-BY-SA 4.0. M. Whirl-Carrillo et al. Clinical Pharmacology & Therapeutics (2012)."
 
 ---
 
-## Lokale Datenbank-Strategie
+## Local Database Strategy
 
-### Einheitliches SQLite-Schema
+### Unified SQLite Schema
 
-Alle Quellen werden in eine einzelne SQLite-Datei importiert (`genesight.db`):
+All sources are imported into a single SQLite file (`genesight.db`):
 
 ```sql
--- Kern-Tabelle: Alle bekannten Varianten
+-- Core table: All known variants
 CREATE TABLE variants (
-    rsid TEXT PRIMARY KEY,          -- rs-Nummer (z.B. "rs1234567")
+    rsid TEXT PRIMARY KEY,          -- rs number (e.g., "rs1234567")
     chromosome TEXT NOT NULL,
     position INTEGER NOT NULL,
     ref_allele TEXT,
     alt_allele TEXT
 );
 
--- ClinVar-Annotationen
+-- ClinVar annotations
 CREATE TABLE clinvar (
     rsid TEXT REFERENCES variants(rsid),
     clinical_significance TEXT,     -- pathogenic, benign, etc.
-    review_status INTEGER,          -- 0-4 Sterne
-    conditions TEXT,                -- JSON-Array von Erkrankungen
+    review_status INTEGER,          -- 0-4 stars
+    conditions TEXT,                -- JSON array of conditions
     gene_symbol TEXT,
     last_updated DATE
 );
 
--- SNPedia-Annotationen
+-- SNPedia annotations
 CREATE TABLE snpedia (
     rsid TEXT REFERENCES variants(rsid),
     magnitude REAL,                 -- 0-10
     repute TEXT,                    -- good, bad, null
-    summary TEXT,                   -- Menschenlesbare Zusammenfassung
+    summary TEXT,                   -- Human-readable summary
     genotype_descriptions TEXT      -- JSON: {"AA": "...", "AG": "...", "GG": "..."}
 );
 
--- GWAS-Assoziationen (1:N — ein SNP kann mehrere Traits haben)
+-- GWAS associations (1:N — one SNP can have multiple traits)
 CREATE TABLE gwas (
     rsid TEXT REFERENCES variants(rsid),
     trait TEXT NOT NULL,
@@ -227,19 +227,19 @@ CREATE TABLE gwas (
     mapped_gene TEXT
 );
 
--- Allelfrequenzen (gnomAD/dbSNP)
+-- Allele frequencies (gnomAD/dbSNP)
 CREATE TABLE frequencies (
     rsid TEXT REFERENCES variants(rsid),
-    af_total REAL,                  -- Gesamt-Allelfrequenz
+    af_total REAL,                  -- Overall allele frequency
     af_afr REAL,                    -- African
     af_amr REAL,                    -- American
     af_eas REAL,                    -- East Asian
     af_eur REAL,                    -- European (non-Finnish)
     af_sas REAL,                    -- South Asian
-    source TEXT                     -- "gnomad" oder "dbsnp"
+    source TEXT                     -- "gnomad" or "dbsnp"
 );
 
--- Pharmakogenetik
+-- Pharmacogenomics
 CREATE TABLE pharmacogenomics (
     rsid TEXT REFERENCES variants(rsid),
     drug TEXT NOT NULL,
@@ -249,7 +249,7 @@ CREATE TABLE pharmacogenomics (
     gene_symbol TEXT
 );
 
--- Indizes für schnelle Lookups
+-- Indexes for fast lookups
 CREATE INDEX idx_clinvar_rsid ON clinvar(rsid);
 CREATE INDEX idx_snpedia_rsid ON snpedia(rsid);
 CREATE INDEX idx_gwas_rsid ON gwas(rsid);
@@ -258,26 +258,26 @@ CREATE INDEX idx_pharma_rsid ON pharmacogenomics(rsid);
 CREATE INDEX idx_variants_chr_pos ON variants(chromosome, position);
 ```
 
-### Erwartete Größen
+### Expected Sizes
 
-| Tabelle | Zeilen (ca.) | Größe (ca.) |
-|---------|-------------|-------------|
-| variants | ~15M (Subset) | ~300MB |
+| Table | Rows (approx.) | Size (approx.) |
+|-------|----------------|----------------|
+| variants | ~15M (subset) | ~300MB |
 | clinvar | ~3M | ~100MB |
 | snpedia | ~112K | ~30MB |
 | gwas | ~500K | ~20MB |
-| frequencies | ~10M (Subset) | ~200MB |
+| frequencies | ~10M (subset) | ~200MB |
 | pharmacogenomics | ~50K | ~5MB |
-| **Gesamt** | | **~500MB-1GB** |
+| **Total** | | **~500MB-1GB** |
 
 ---
 
-## Update-Strategie
+## Update Strategy
 
-- ClinVar: Wöchentlicher FTP-Download, Delta-Import
-- SNPedia: Monatlicher Re-Scrape (MediaWiki Recent Changes API für Deltas)
-- GWAS Catalog: Monatlicher Re-Download
-- gnomAD: Stabile Releases, Update bei neuer Version
-- PharmGKB: Quartalsweise Check
+- ClinVar: Weekly FTP download, delta import
+- SNPedia: Monthly re-scrape (MediaWiki Recent Changes API for deltas)
+- GWAS Catalog: Monthly re-download
+- gnomAD: Stable releases, update on new version
+- PharmGKB: Quarterly check
 
-Das CLI-Tool soll einen `genesight update` Command haben, der alle Datenbanken aktualisiert.
+The CLI tool should have a `genesight update` command that updates all databases.

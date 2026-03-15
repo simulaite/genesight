@@ -1,138 +1,138 @@
-# GeneSight – Lizenz-Übersicht
+# GeneSight — License Overview
 
-## Projekt-Lizenz
+## Project License
 
-**GeneSight** steht unter der **GNU General Public License v3.0 or later (GPL-3.0-or-later)**.
+**GeneSight** is licensed under the **GNU General Public License v3.0 or later (GPL-3.0-or-later)**.
 
-### Warum GPL-3.0?
+### Why GPL-3.0?
 
-1. **Copyleft:** Stellt sicher, dass Forks und Ableitungen ebenfalls Open Source bleiben
-2. **Kompatibilität:** GPL-3.0 ist kompatibel mit CC-BY-NC-SA 3.0 (SNPedia) im nicht-kommerziellen Kontext
-3. **Community:** Fördert Beiträge zurück ins Projekt
-4. **Privacy-Signal:** Unterstreicht, dass der Code inspizierbar ist — wichtig bei DNA-Daten
+1. **Copyleft:** Ensures that forks and derivative works also remain open source
+2. **Compatibility:** GPL-3.0 is compatible with CC-BY-NC-SA 3.0 (SNPedia) in a non-commercial context
+3. **Community:** Encourages contributions back to the project
+4. **Privacy signal:** Underscores that the code is inspectable — important when dealing with DNA data
 
 ---
 
-## Datenbank-Lizenzen im Detail
+## Database Licenses in Detail
 
-### Public Domain (keine Einschränkungen)
+### Public Domain (no restrictions)
 
-| Datenbank | Begründung |
-|-----------|-----------|
-| **ClinVar** | US Government Work — per 17 U.S.C. § 105 nicht urheberrechtsfähig |
-| **dbSNP** | US Government Work — gleiche Begründung |
+| Database | Rationale |
+|----------|-----------|
+| **ClinVar** | US Government Work — not subject to copyright per 17 U.S.C. § 105 |
+| **dbSNP** | US Government Work — same rationale |
 
-Diese Daten können ohne jede Einschränkung genutzt, verteilt und kommerziell verwendet werden.
-Attribution ist nicht rechtlich erforderlich, aber wissenschaftlich gute Praxis.
+These data may be used, distributed, and commercially exploited without any restriction.
+Attribution is not legally required but is considered good scientific practice.
 
 ### CC-BY-NC-SA 3.0 US (SNPedia)
 
-**Erlaubt:**
-- Teilen — Kopieren und Weiterverbreiten in jedem Format
-- Bearbeiten — Remixen, Verändern und Aufbauen auf dem Material
+**Permitted:**
+- Share — copy and redistribute in any format
+- Adapt — remix, transform, and build upon the material
 
-**Bedingungen:**
-- **BY (Namensnennung):** SNPedia muss als Quelle genannt werden
-- **NC (Nicht-kommerziell):** Keine kommerzielle Nutzung ohne separate Lizenz
-- **SA (Share-Alike):** Abgeleitete Werke müssen unter der gleichen Lizenz stehen
+**Conditions:**
+- **BY (Attribution):** SNPedia must be credited as the source
+- **NC (Non-commercial):** No commercial use without a separate license
+- **SA (Share-Alike):** Derivative works must be released under the same license
 
-**Für GeneSight bedeutet das:**
-- ✅ Das Open-Source-Projekt kann SNPedia-Daten frei nutzen
-- ✅ Nutzer können das Tool für persönliche DNA-Analyse verwenden
-- ✅ Akademische Forschung ist erlaubt
-- ❌ Ein kommerzieller Fork müsste SNPedia-Daten entfernen
-- → **Architektur-Entscheidung:** SNPedia-Daten werden als separater, optionaler Download behandelt, nicht im Repo gebündelt
+**What this means for GeneSight:**
+- ✅ The open-source project may freely use SNPedia data
+- ✅ Users may use the tool for personal DNA analysis
+- ✅ Academic research is permitted
+- ❌ A commercial fork would need to remove SNPedia data
+- → **Architectural decision:** SNPedia data is treated as a separate, optional download rather than bundled in the repository
 
 ### CC-BY-SA 4.0 (PharmGKB)
 
-**Erlaubt:**
-- Teilen und Bearbeiten, auch kommerziell
+**Permitted:**
+- Share and adapt, including for commercial purposes
 
-**Bedingungen:**
-- **BY (Namensnennung):** PharmGKB muss als Quelle genannt werden
-- **SA (Share-Alike):** Abgeleitete Werke unter gleicher oder kompatibler Lizenz
+**Conditions:**
+- **BY (Attribution):** PharmGKB must be credited as the source
+- **SA (Share-Alike):** Derivative works must be released under the same or a compatible license
 
-**Hinweis:** PharmGKB hat zusätzliche Nutzungsbedingungen für kommerzielle Nutzung.
-Für akademische und nicht-kommerzielle Open-Source-Nutzung: frei verfügbar.
+**Note:** PharmGKB has additional terms of use for commercial usage.
+For academic and non-commercial open-source use: freely available.
 
 ### Open Access (GWAS Catalog, gnomAD)
 
-| Datenbank | Lizenz | Details |
-|-----------|--------|---------|
-| **GWAS Catalog** | EMBL-EBI Terms of Use | Frei für alle Zwecke, Attribution erbeten |
-| **gnomAD** | ODC Open Database License | Frei für alle Zwecke inkl. kommerziell |
+| Database | License | Details |
+|----------|---------|---------|
+| **GWAS Catalog** | EMBL-EBI Terms of Use | Free for all purposes; attribution requested |
+| **gnomAD** | ODC Open Database License | Free for all purposes including commercial use |
 
 ---
 
-## Lizenz-Kompatibilitäts-Matrix
+## License Compatibility Matrix
 
 ```
 GPL-3.0 (GeneSight Code)
-├── ✅ Public Domain (ClinVar, dbSNP) — kein Konflikt
-├── ✅ CC-BY-SA 4.0 (PharmGKB) — kompatibel ab GPL-3.0
-├── ✅ ODC-ODbL (gnomAD) — kompatibel
-├── ✅ Open Access (GWAS Catalog) — kompatibel
-└── ⚠️ CC-BY-NC-SA 3.0 (SNPedia) — kompatibel NUR wenn:
-    - Das Gesamtprojekt nicht-kommerziell genutzt wird, ODER
-    - SNPedia-Daten als separater, optionaler Download behandelt werden
+├── ✅ Public Domain (ClinVar, dbSNP) — no conflict
+├── ✅ CC-BY-SA 4.0 (PharmGKB) — compatible with GPL-3.0
+├── ✅ ODC-ODbL (gnomAD) — compatible
+├── ✅ Open Access (GWAS Catalog) — compatible
+└── ⚠️ CC-BY-NC-SA 3.0 (SNPedia) — compatible ONLY if:
+    - The overall project is used non-commercially, OR
+    - SNPedia data is treated as a separate, optional download
 ```
 
-### Architektur-Lösung für CC-BY-NC-SA
+### Architectural Solution for CC-BY-NC-SA
 
 ```
-genesight.db (Haupt-Datenbank)
+genesight.db (Main database)
 ├── clinvar     → Public Domain ✅
 ├── dbsnp       → Public Domain ✅
 ├── gwas        → Open Access ✅
 ├── gnomad      → ODC-ODbL ✅
 └── pharmgkb    → CC-BY-SA 4.0 ✅
 
-snpedia.db (Separate, optionale Datenbank)
+snpedia.db (Separate, optional database)
 └── snpedia     → CC-BY-NC-SA 3.0 ⚠️
 ```
 
-Das CLI-Tool funktioniert ohne `snpedia.db` — der Nutzer kann sie optional
-herunterladen mit `genesight fetch --include-snpedia`.
+The CLI tool works without `snpedia.db` — the user can optionally
+download it via `genesight fetch --include-snpedia`.
 
 ---
 
-## Attribution im Code
+## Attribution in Code
 
-Jeder generierte Report MUSS folgenden Attribution-Block enthalten:
+Every generated report MUST include the following attribution block:
 
 ```markdown
 ---
-## Datenquellen
+## Data Sources
 
-Dieser Report wurde erstellt mit GeneSight (GPL-3.0).
-Die folgenden Datenquellen wurden verwendet:
+This report was generated with GeneSight (GPL-3.0).
+The following data sources were used:
 
 - **ClinVar** — NCBI, National Library of Medicine (Public Domain)
-- **SNPedia** — snpedia.com (CC-BY-NC-SA 3.0) [falls genutzt]
+- **SNPedia** — snpedia.com (CC-BY-NC-SA 3.0) [if used]
 - **GWAS Catalog** — NHGRI-EBI (Open Access)
 - **gnomAD** — Broad Institute (ODC-ODbL)
-- **PharmGKB** — pharmgkb.org (CC-BY-SA 4.0) [falls genutzt]
+- **PharmGKB** — pharmgkb.org (CC-BY-SA 4.0) [if used]
 
-Dieser Report ist NICHT diagnostisch. Konsultieren Sie einen Arzt oder
-genetischen Berater für medizinische Entscheidungen.
+This report is NOT diagnostic. Consult a physician or
+genetic counselor for medical decisions.
 ---
 ```
 
 ---
 
-## Drittanbieter-Abhängigkeiten (Rust Crates)
+## Third-Party Dependencies (Rust Crates)
 
-Alle Rust-Crates müssen GPL-3.0-kompatibel sein. Erlaubte Lizenzen:
+All Rust crates must be GPL-3.0-compatible. Permitted licenses:
 
 - MIT ✅
 - Apache-2.0 ✅
 - BSD-2-Clause / BSD-3-Clause ✅
 - ISC ✅
-- MPL-2.0 ✅ (Copyleft auf Datei-Ebene)
+- MPL-2.0 ✅ (file-level copyleft)
 - GPL-3.0 ✅
 - Unlicense ✅
 
-**Nicht erlaubt:**
-- GPL-2.0-only (ohne "or later") — inkompatibel mit GPL-3.0
-- AGPL-3.0 — würde Server-Betreiber zu Source-Disclosure zwingen
-- Proprietäre Lizenzen
+**Not permitted:**
+- GPL-2.0-only (without "or later") — incompatible with GPL-3.0
+- AGPL-3.0 — would require server operators to disclose source
+- Proprietary licenses
