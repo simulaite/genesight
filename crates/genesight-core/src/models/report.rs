@@ -15,6 +15,12 @@ pub struct ScoredResult {
     pub summary: String,
     /// More detailed explanation
     pub details: String,
+    /// Caveats or limitations that affect interpretation of this result.
+    ///
+    /// Examples: palindromic SNP strand ambiguity, low-confidence allele
+    /// frequency data, conflicting database entries.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub limitations: Vec<String>,
 }
 
 /// Categories for organizing results in the report.

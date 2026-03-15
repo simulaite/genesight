@@ -717,6 +717,18 @@ fn write_results(out: &mut String, results: &[ScoredResult]) {
                     "<div class=\"details\">{}</div>",
                     html_escape(&result.details)
                 );
+                if !result.limitations.is_empty() {
+                    out.push_str(
+                        "<div class=\"details\" style=\"color:#b45309;margin-top:0.5rem;\">\n",
+                    );
+                    out.push_str(
+                        "<strong>Limitations:</strong><ul style=\"margin:0.25rem 0 0 1rem;\">\n",
+                    );
+                    for limitation in &result.limitations {
+                        let _ = writeln!(out, "<li>{}</li>", html_escape(limitation));
+                    }
+                    out.push_str("</ul></div>\n");
+                }
                 out.push_str("</div>\n");
             }
         }
@@ -837,6 +849,7 @@ mod tests {
                 category: ResultCategory::MonogenicDisease,
                 summary: "BRCA1 (rs123) — Pathogenic (3-star review)".to_string(),
                 details: "Genotype: AG. Classification: Pathogenic.".to_string(),
+                limitations: Vec::new(),
             }],
             attributions: vec!["ClinVar: NCBI/NLM (public domain)".to_string()],
             disclaimer: "This is not medical advice.".to_string(),

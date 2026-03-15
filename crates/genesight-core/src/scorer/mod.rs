@@ -10,9 +10,18 @@ pub mod pharmaco;
 pub mod polygenic;
 pub mod traits;
 
+use crate::allele::{match_alleles_with_frequency, AlleleMatch};
 use crate::models::annotation::{AnnotatedVariant, GwasHit};
 use crate::models::confidence::ConfidenceTier;
 use crate::models::report::{ResultCategory, ScoredResult};
+use crate::models::variant::Genotype;
+
+/// Caveat text appended to results when a palindromic SNP's strand could not
+/// be resolved using allele frequency data.
+const STRAND_AMBIGUITY_CAVEAT: &str =
+    "This variant is a palindromic SNP (A/T or C/G). Strand orientation \
+     could not be confidently resolved from allele frequency data. The \
+     reported risk allele match may be on the wrong strand.";
 
 /// Score annotated variants and assign confidence tiers.
 ///
@@ -115,6 +124,7 @@ fn score_clinvar(
                  ClinVar review status: {}-star. This variant has strong clinical evidence.",
                 clinvar.significance, conditions_str, clinvar.review_stars,
             ),
+            limitations: Vec::new(),
         })
     } else if is_carrier_or_benign {
         let tier = if clinvar.review_stars >= 2 {
@@ -132,6 +142,7 @@ fn score_clinvar(
                  ClinVar review status: {}-star.",
                 clinvar.significance, conditions_str, clinvar.review_stars,
             ),
+            limitations: Vec::new(),
         })
     } else if is_pathogenic {
         // Pathogenic but low review stars
@@ -149,6 +160,7 @@ fn score_clinvar(
                  ClinVar review status: {}-star. Lower review status indicates limited evidence.",
                 clinvar.significance, conditions_str, clinvar.review_stars,
             ),
+            limitations: Vec::new(),
         })
     } else {
         // Other significance values (VUS, conflicting, etc.) — skip
@@ -199,6 +211,7 @@ fn score_pharma(
              Evidence level: {level}. Recommendation: {recommendation}.",
             pharma.gene, pharma.drug,
         ),
+        limitations: Vec::new(),
     })
 }
 
@@ -206,6 +219,10 @@ fn score_pharma(
 ///
 /// - p_value < 5e-8 and odds_ratio > 1.5 => Tier2, PolygenicRiskScore
 /// - Otherwise => Tier3, ComplexTrait
+///
+/// When a risk allele is available, performs strand-aware allele matching.
+/// Palindromic SNPs that cannot be resolved are flagged with a limitation
+/// caveat rather than silently assumed to match.
 fn score_gwas_hit(
     av: &AnnotatedVariant,
     rsid: &str,
@@ -215,6 +232,14 @@ fn score_gwas_hit(
     let genome_wide_significant = hit.p_value < 5e-8;
     let moderate_effect = hit.odds_ratio.is_some_and(|or| or > 1.5);
     let gene = hit.mapped_gene.as_deref().unwrap_or("intergenic");
+
+    // Perform allele matching when risk allele data is available
+    let allele_match = compute_allele_match(av, hit);
+    let mut limitations = Vec::new();
+
+    if allele_match == Some(AlleleMatch::StrandAmbiguous) {
+        limitations.push(STRAND_AMBIGUITY_CAVEAT.to_string());
+    }
 
     let (tier, category) = if genome_wide_significant && moderate_effect {
         (
@@ -255,6 +280,7 @@ fn score_gwas_hit(
              Mapped gene: {gene}.{pubmed}",
             hit.trait_name, hit.p_value,
         ),
+        limitations,
     })
 }
 
@@ -311,7 +337,84 @@ fn score_snpedia(
             mag = snpedia.magnitude,
             summary = snpedia.summary,
         ),
+        limitations: Vec::new(),
     })
+}
+
+/// Compute allele match for a GWAS hit using frequency-aware strand resolution.
+///
+/// Extracts the user's genotype alleles and the GWAS risk/alt alleles, then
+/// uses [`match_alleles_with_frequency`] to determine whether the user
+/// carries the risk allele, accounting for palindromic SNP ambiguity.
+///
+/// Returns `None` if the risk allele is not available or the genotype is
+/// not a simple SNP (e.g., indels, no-calls).
+fn compute_allele_match(av: &AnnotatedVariant, hit: &GwasHit) -> Option<AlleleMatch> {
+    let risk_allele_str = hit.risk_allele.as_deref()?;
+
+    // Risk allele should be a single base
+    let risk_char = single_base_char(risk_allele_str)?;
+
+    // Extract user alleles from genotype
+    let (a1, a2) = match av.variant.genotype {
+        Genotype::Homozygous(a) => (a, a),
+        Genotype::Heterozygous(a, b) => (a, b),
+        Genotype::NoCall | Genotype::Indel(_) => return None,
+    };
+
+    // Determine the alternate allele: if risk allele equals one of the user's
+    // alleles, the alt is the other. Otherwise use complement logic.
+    let alt_char = infer_alt_allele(a1, a2, risk_char);
+
+    // Database allele frequency for frequency-based palindromic resolution.
+    // Use af_total from the variant's frequency data when available.
+    let db_af = av.frequency.as_ref().map(|f| f.af_total);
+
+    // In single-sample mode we have no user AF, so pass None.
+    let user_af: Option<f64> = None;
+
+    Some(match_alleles_with_frequency(
+        (a1, a2),
+        risk_char,
+        alt_char,
+        user_af,
+        db_af,
+    ))
+}
+
+/// Extract a single DNA base character from a string, returning `None` if
+/// the string is not exactly one standard base.
+fn single_base_char(s: &str) -> Option<char> {
+    let trimmed = s.trim();
+    if trimmed.len() != 1 {
+        return None;
+    }
+    let c = trimmed.chars().next()?;
+    match c.to_ascii_uppercase() {
+        'A' | 'T' | 'C' | 'G' => Some(c.to_ascii_uppercase()),
+        _ => None,
+    }
+}
+
+/// Infer the alternate allele given two user alleles and a reference allele.
+///
+/// If the user is heterozygous and one allele matches the reference, the
+/// other is the alternate. Otherwise, falls back to the Watson-Crick
+/// complement of the reference.
+fn infer_alt_allele(a1: char, a2: char, ref_allele: char) -> char {
+    let r = ref_allele.to_ascii_uppercase();
+    let u1 = a1.to_ascii_uppercase();
+    let u2 = a2.to_ascii_uppercase();
+
+    if u1 == r && u2 != r {
+        u2
+    } else if u2 == r && u1 != r {
+        u1
+    } else {
+        // Both alleles are the same as ref (homozygous ref), or neither matches.
+        // Fall back to complement as a reasonable guess for the alt allele.
+        crate::allele::strand::complement(r).unwrap_or(r)
+    }
 }
 
 /// Display implementation for `ResultCategory` used in reports.
@@ -584,5 +687,173 @@ mod tests {
         let results = score_variants(&[av1, av2]);
         assert_eq!(results[0].tier, ConfidenceTier::Tier1Reliable);
         assert_eq!(results[1].tier, ConfidenceTier::Tier3Speculative);
+    }
+
+    // --- Palindromic SNP / allele matching tests ---
+
+    fn make_variant_with_genotype(rsid: &str, genotype: Genotype) -> Variant {
+        Variant {
+            rsid: Some(rsid.to_string()),
+            chromosome: "1".to_string(),
+            position: 100000,
+            genotype,
+            source_format: SourceFormat::TwentyThreeAndMe,
+        }
+    }
+
+    fn make_annotated_with_genotype(rsid: &str, genotype: Genotype) -> AnnotatedVariant {
+        AnnotatedVariant {
+            variant: make_variant_with_genotype(rsid, genotype),
+            clinvar: None,
+            snpedia: None,
+            gwas_hits: Vec::new(),
+            frequency: None,
+            pharmacogenomics: None,
+        }
+    }
+
+    #[test]
+    fn non_palindromic_ag_gwas_no_strand_caveat() {
+        // A/G is non-palindromic — should NOT produce strand ambiguity limitation
+        let mut av = make_annotated_with_genotype("rs800", Genotype::Heterozygous('A', 'G'));
+        av.gwas_hits = vec![GwasHit {
+            trait_name: "Test trait".to_string(),
+            p_value: 1e-10,
+            odds_ratio: Some(2.0),
+            beta: None,
+            risk_allele: Some("A".to_string()),
+            risk_allele_frequency: Some(0.3),
+            pubmed_id: None,
+            mapped_gene: Some("GENE1".to_string()),
+        }];
+
+        let results = score_variants(&[av]);
+        assert_eq!(results.len(), 1);
+        assert!(
+            results[0].limitations.is_empty(),
+            "non-palindromic SNP should have no strand ambiguity limitation"
+        );
+    }
+
+    #[test]
+    fn palindromic_at_without_frequency_has_strand_caveat() {
+        // A/T palindromic, no frequency data => StrandAmbiguous => caveat
+        let mut av = make_annotated_with_genotype("rs801", Genotype::Heterozygous('A', 'T'));
+        av.gwas_hits = vec![GwasHit {
+            trait_name: "Palindromic trait".to_string(),
+            p_value: 1e-10,
+            odds_ratio: Some(2.0),
+            beta: None,
+            risk_allele: Some("A".to_string()),
+            risk_allele_frequency: None,
+            pubmed_id: None,
+            mapped_gene: Some("GENE2".to_string()),
+        }];
+        // No frequency data on the variant
+        av.frequency = None;
+
+        let results = score_variants(&[av]);
+        assert_eq!(results.len(), 1);
+        assert!(
+            !results[0].limitations.is_empty(),
+            "palindromic SNP without frequency should have strand ambiguity limitation"
+        );
+        assert!(results[0].limitations[0].contains("palindromic"));
+    }
+
+    #[test]
+    fn palindromic_cg_with_extreme_frequency_resolves() {
+        // C/G palindromic, but db AF is 0.05 (very far from 0.5) => resolved
+        let mut av = make_annotated_with_genotype("rs802", Genotype::Heterozygous('C', 'G'));
+        av.gwas_hits = vec![GwasHit {
+            trait_name: "Resolved trait".to_string(),
+            p_value: 1e-10,
+            odds_ratio: Some(2.0),
+            beta: None,
+            risk_allele: Some("C".to_string()),
+            risk_allele_frequency: None,
+            pubmed_id: None,
+            mapped_gene: Some("GENE3".to_string()),
+        }];
+        // Frequency data with extreme AF resolves the palindromic ambiguity
+        av.frequency = Some(AlleleFrequency {
+            af_total: 0.05,
+            af_afr: None,
+            af_amr: None,
+            af_eas: None,
+            af_eur: None,
+            af_sas: None,
+            source: "gnomad".to_string(),
+        });
+
+        let results = score_variants(&[av]);
+        assert_eq!(results.len(), 1);
+        assert!(
+            results[0].limitations.is_empty(),
+            "palindromic SNP with extreme AF should be resolved (no caveat)"
+        );
+    }
+
+    #[test]
+    fn palindromic_at_with_ambiguous_frequency_has_caveat() {
+        // A/T palindromic, db AF near 0.5 => still ambiguous
+        let mut av = make_annotated_with_genotype("rs803", Genotype::Heterozygous('A', 'T'));
+        av.gwas_hits = vec![GwasHit {
+            trait_name: "Ambiguous trait".to_string(),
+            p_value: 1e-10,
+            odds_ratio: Some(2.0),
+            beta: None,
+            risk_allele: Some("A".to_string()),
+            risk_allele_frequency: None,
+            pubmed_id: None,
+            mapped_gene: Some("GENE4".to_string()),
+        }];
+        // AF near 0.5 does not resolve palindromic ambiguity
+        av.frequency = Some(AlleleFrequency {
+            af_total: 0.48,
+            af_afr: None,
+            af_amr: None,
+            af_eas: None,
+            af_eur: None,
+            af_sas: None,
+            source: "gnomad".to_string(),
+        });
+
+        let results = score_variants(&[av]);
+        assert_eq!(results.len(), 1);
+        assert!(
+            !results[0].limitations.is_empty(),
+            "palindromic SNP with AF near 0.5 should remain ambiguous"
+        );
+        assert!(results[0].limitations[0].contains("palindromic"));
+    }
+
+    #[test]
+    fn scorer_handles_strand_ambiguous_with_caveat_in_limitations() {
+        // End-to-end: palindromic SNP should still produce a scored result
+        // but with a caveat in the limitations field
+        let mut av = make_annotated_with_genotype("rs804", Genotype::Heterozygous('A', 'T'));
+        av.gwas_hits = vec![GwasHit {
+            trait_name: "Important trait".to_string(),
+            p_value: 1e-12,
+            odds_ratio: Some(3.0),
+            beta: None,
+            risk_allele: Some("A".to_string()),
+            risk_allele_frequency: None,
+            pubmed_id: None,
+            mapped_gene: Some("GENE5".to_string()),
+        }];
+
+        let results = score_variants(&[av]);
+        assert_eq!(results.len(), 1, "palindromic SNP should still be scored");
+        assert_eq!(results[0].tier, ConfidenceTier::Tier2Probable);
+        assert!(
+            !results[0].limitations.is_empty(),
+            "strand-ambiguous result must have limitations"
+        );
+        assert!(
+            results[0].limitations[0].contains("strand"),
+            "limitation should mention strand ambiguity"
+        );
     }
 }

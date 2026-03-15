@@ -29,6 +29,7 @@
 //! let report = genesight_core::analyze(&variants, &main_db, None, &tiers).unwrap();
 //! ```
 
+pub mod allele;
 pub mod annotator;
 pub mod db;
 pub mod models;

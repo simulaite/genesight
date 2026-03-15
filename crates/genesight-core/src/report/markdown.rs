@@ -113,6 +113,12 @@ fn write_results(out: &mut String, results: &[ScoredResult]) {
                 let _ = writeln!(out, "- **Genotype:** {genotype}");
                 let _ = writeln!(out, "- **Summary:** {}", result.summary);
                 let _ = writeln!(out, "- **Details:** {}", result.details);
+                if !result.limitations.is_empty() {
+                    let _ = writeln!(out, "- **Limitations:**");
+                    for limitation in &result.limitations {
+                        let _ = writeln!(out, "  - {limitation}");
+                    }
+                }
                 out.push('\n');
             }
         }
@@ -242,6 +248,7 @@ mod tests {
                 category: ResultCategory::MonogenicDisease,
                 summary: "BRCA1 (rs123) — Pathogenic (3-star review)".to_string(),
                 details: "Genotype: AG. Classification: Pathogenic.".to_string(),
+                limitations: Vec::new(),
             }],
             attributions: vec![
                 "ClinVar: NCBI/NLM (public domain)".to_string(),
