@@ -23,6 +23,7 @@ pub fn render(report: &Report) -> Result<String, ReportError> {
     write_header(&mut out);
     write_disclaimer(&mut out, &report.disclaimer);
     write_summary(&mut out, report);
+    write_assembly_warnings(&mut out, &report.assembly_warnings);
     write_results(&mut out, &report.results);
     write_attributions(&mut out, &report.attributions);
     write_body_close(&mut out);
@@ -324,6 +325,16 @@ fn write_summary(out: &mut String, report: &Report) {
         out,
         "<tr class=\"tier-row tier-row-3\"><td><span class=\"badge badge-tier3\">T3</span> Speculative</td><td>{tier3_count}</td></tr>"
     );
+    let _ = writeln!(
+        out,
+        "<tr><td>Input assembly</td><td>{}</td></tr>",
+        html_escape(&report.input_assembly.to_string())
+    );
+    let _ = writeln!(
+        out,
+        "<tr><td>Database assembly</td><td>{}</td></tr>",
+        html_escape(&report.db_assembly.to_string())
+    );
     out.push_str("</tbody>\n</table>\n</div>\n");
 
     // RIGHT PANEL: contextual details
@@ -624,6 +635,21 @@ fn write_summary(out: &mut String, report: &Report) {
     }
 }
 
+fn write_assembly_warnings(out: &mut String, warnings: &[String]) {
+    if warnings.is_empty() {
+        return;
+    }
+
+    out.push_str(
+        "<div class=\"disclaimer\" style=\"border-left-color:#f59e0b;background:#fffbeb;\">\n",
+    );
+    out.push_str("<strong>Assembly Warnings</strong>\n");
+    for warning in warnings {
+        let _ = writeln!(out, "<p>{}</p>", html_escape(warning));
+    }
+    out.push_str("</div>\n");
+}
+
 /// Render ClinVar review stars as HTML.
 fn render_stars(count: u8) -> String {
     let filled = "\u{2605}".repeat(count as usize);
@@ -803,6 +829,7 @@ fn html_escape(s: &str) -> String {
 mod tests {
     use super::*;
     use crate::models::annotation::*;
+    use crate::models::assembly::GenomeAssembly;
     use crate::models::variant::{Genotype, SourceFormat, Variant};
 
     fn make_test_report() -> Report {
@@ -840,6 +867,9 @@ mod tests {
             }],
             attributions: vec!["ClinVar: NCBI/NLM (public domain)".to_string()],
             disclaimer: "This is not medical advice.".to_string(),
+            input_assembly: GenomeAssembly::GRCh37,
+            db_assembly: GenomeAssembly::GRCh37,
+            assembly_warnings: Vec::new(),
         }
     }
 
@@ -886,8 +916,29 @@ mod tests {
             results: vec![],
             attributions: vec![],
             disclaimer: "Disclaimer.".to_string(),
+            input_assembly: GenomeAssembly::Unknown,
+            db_assembly: GenomeAssembly::Unknown,
+            assembly_warnings: Vec::new(),
         };
         let html = render(&report).expect("render");
         assert!(html.contains("No significant findings"));
+    }
+
+    #[test]
+    fn render_contains_assembly_info() {
+        let report = make_test_report();
+        let html = render(&report).expect("render");
+        assert!(html.contains("Input assembly"));
+        assert!(html.contains("Database assembly"));
+        assert!(html.contains("GRCh37 (hg19)"));
+    }
+
+    #[test]
+    fn render_contains_assembly_warnings() {
+        let mut report = make_test_report();
+        report.assembly_warnings = vec!["Assembly mismatch detected".to_string()];
+        let html = render(&report).expect("render");
+        assert!(html.contains("Assembly Warnings"));
+        assert!(html.contains("Assembly mismatch detected"));
     }
 }

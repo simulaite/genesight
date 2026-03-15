@@ -179,11 +179,17 @@ fn main() -> Result<()> {
                 let content = std::fs::read_to_string(&file)
                     .with_context(|| format!("cannot read {}", file.display()))?;
 
-                let variants = genesight_core::parser::parse_auto(&content)?;
-                eprintln!("Parsed {} variants", variants.len());
+                let parsed = genesight_core::parser::parse_auto_with_metadata(&content)?;
+                eprintln!(
+                    "Parsed {} variants (assembly: {})",
+                    parsed.variants.len(),
+                    parsed.assembly
+                );
 
                 let main_conn = Connection::open(&db_path)
                     .with_context(|| format!("cannot open database {}", db_path.display()))?;
+
+                let db_assembly = genesight_core::db::query_db_assembly(&main_conn);
 
                 let snpedia_conn = snpedia_db
                     .map(|p| {
@@ -195,11 +201,13 @@ fn main() -> Result<()> {
                     .transpose()?;
 
                 eprintln!("Analyzing against database...");
-                let report = genesight_core::analyze(
-                    &variants,
+                let report = genesight_core::analyze_with_assembly(
+                    &parsed.variants,
                     &main_conn,
                     snpedia_conn.as_ref(),
                     &tier_filter,
+                    parsed.assembly,
+                    db_assembly,
                 )?;
 
                 eprintln!(
@@ -301,13 +309,15 @@ fn run_analysis_background(
     if !send(AnalysisProgress::Stage("Parsing variants...".to_string())) {
         return;
     }
-    let variants = match genesight_core::parser::parse_auto(&content) {
-        Ok(v) => v,
+    let parsed = match genesight_core::parser::parse_auto_with_metadata(&content) {
+        Ok(p) => p,
         Err(e) => {
             let _ = send(AnalysisProgress::Error(format!("Parse error: {e}")));
             return;
         }
     };
+    let variants = parsed.variants;
+    let input_assembly = parsed.assembly;
     if !send(AnalysisProgress::FileRead(variants.len())) {
         return;
     }
@@ -359,14 +369,22 @@ fn run_analysis_background(
         return;
     }
 
-    let report =
-        match genesight_core::analyze(&variants, &main_conn, snpedia_conn.as_ref(), tier_filter) {
-            Ok(r) => r,
-            Err(e) => {
-                let _ = send(AnalysisProgress::Error(format!("Analysis failed: {e}")));
-                return;
-            }
-        };
+    let db_assembly = genesight_core::db::query_db_assembly(&main_conn);
+
+    let report = match genesight_core::analyze_with_assembly(
+        &variants,
+        &main_conn,
+        snpedia_conn.as_ref(),
+        tier_filter,
+        input_assembly,
+        db_assembly,
+    ) {
+        Ok(r) => r,
+        Err(e) => {
+            let _ = send(AnalysisProgress::Error(format!("Analysis failed: {e}")));
+            return;
+        }
+    };
 
     // Step 5: Scoring (already done inside analyze, but signal the TUI)
     if !send(AnalysisProgress::Stage("Scoring variants...".to_string())) {

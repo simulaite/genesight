@@ -46,7 +46,7 @@ fn write_disclaimer(out: &mut String, disclaimer: &str) {
 
 fn write_summary(out: &mut String, report: &Report) {
     out.push_str("## Summary\n\n");
-    let _ = writeln!(out, "| Metric | Count |");
+    let _ = writeln!(out, "| Metric | Value |");
     let _ = writeln!(out, "|--------|------:|");
     let _ = writeln!(
         out,
@@ -80,6 +80,23 @@ fn write_summary(out: &mut String, report: &Report) {
     let _ = writeln!(out, "| Tier 1 (Reliable) | {tier1} |");
     let _ = writeln!(out, "| Tier 2 (Probable) | {tier2} |");
     let _ = writeln!(out, "| Tier 3 (Speculative) | {tier3} |");
+    let _ = writeln!(out, "| Input assembly | {} |", report.input_assembly);
+    let _ = writeln!(out, "| Database assembly | {} |", report.db_assembly);
+    out.push('\n');
+
+    write_assembly_warnings(out, &report.assembly_warnings);
+}
+
+fn write_assembly_warnings(out: &mut String, warnings: &[String]) {
+    if warnings.is_empty() {
+        return;
+    }
+
+    out.push_str("### Assembly Warnings\n\n");
+    for warning in warnings {
+        let _ = writeln!(out, "> **Warning:** {warning}");
+        out.push_str(">\n");
+    }
     out.push('\n');
 }
 
@@ -208,6 +225,7 @@ impl ResultCategory {
 mod tests {
     use super::*;
     use crate::models::annotation::*;
+    use crate::models::assembly::GenomeAssembly;
     use crate::models::variant::{Genotype, SourceFormat, Variant};
 
     fn make_test_report() -> Report {
@@ -249,6 +267,9 @@ mod tests {
             ],
             disclaimer: "This is not medical advice. Consult a healthcare professional."
                 .to_string(),
+            input_assembly: GenomeAssembly::GRCh37,
+            db_assembly: GenomeAssembly::GRCh37,
+            assembly_warnings: Vec::new(),
         }
     }
 
@@ -300,8 +321,29 @@ mod tests {
             results: vec![],
             attributions: vec![],
             disclaimer: "Disclaimer.".to_string(),
+            input_assembly: GenomeAssembly::Unknown,
+            db_assembly: GenomeAssembly::Unknown,
+            assembly_warnings: Vec::new(),
         };
         let md = render(&report).expect("render");
         assert!(md.contains("No significant findings"));
+    }
+
+    #[test]
+    fn render_contains_assembly_info() {
+        let report = make_test_report();
+        let md = render(&report).expect("render");
+        assert!(md.contains("GRCh37 (hg19)"));
+        assert!(md.contains("Input assembly"));
+        assert!(md.contains("Database assembly"));
+    }
+
+    #[test]
+    fn render_contains_assembly_warnings() {
+        let mut report = make_test_report();
+        report.assembly_warnings = vec!["Assembly mismatch detected".to_string()];
+        let md = render(&report).expect("render");
+        assert!(md.contains("Assembly Warnings"));
+        assert!(md.contains("Assembly mismatch detected"));
     }
 }

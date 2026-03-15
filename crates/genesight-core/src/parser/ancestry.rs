@@ -3,9 +3,28 @@
 //! Format: tab-separated with columns `rsid`, `chromosome`, `position`, `allele1`, `allele2`.
 //! Comment lines start with `#`.
 
-use crate::models::{Genotype, SourceFormat, Variant};
+use crate::models::{GenomeAssembly, Genotype, SourceFormat, Variant};
 
 use super::ParseError;
+
+/// Detect the genome assembly from AncestryDNA file header comments.
+///
+/// Scans `#` comment lines for assembly identifiers. AncestryDNA files
+/// typically do not include assembly information, so this usually returns
+/// `Unknown`.
+pub fn detect_assembly(content: &str) -> GenomeAssembly {
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if !trimmed.starts_with('#') {
+            break;
+        }
+        let assembly = GenomeAssembly::from_header_line(trimmed);
+        if assembly != GenomeAssembly::Unknown {
+            return assembly;
+        }
+    }
+    GenomeAssembly::Unknown
+}
 
 /// Parse AncestryDNA raw data content into variants.
 pub fn parse(content: &str) -> Result<Vec<Variant>, ParseError> {
@@ -77,6 +96,26 @@ fn parse_alleles(a1: &str, a2: &str) -> Genotype {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn detect_assembly_usually_unknown() {
+        let content = "\
+#AncestryDNA raw data
+rsid\tchromosome\tposition\tallele1\tallele2
+rs4477212\t1\t82154\tA\tA
+";
+        assert_eq!(detect_assembly(content), GenomeAssembly::Unknown);
+    }
+
+    #[test]
+    fn detect_assembly_if_present() {
+        let content = "\
+#AncestryDNA raw data build 37
+rsid\tchromosome\tposition\tallele1\tallele2
+rs4477212\t1\t82154\tA\tA
+";
+        assert_eq!(detect_assembly(content), GenomeAssembly::GRCh37);
+    }
 
     #[test]
     fn parse_basic_ancestry() {

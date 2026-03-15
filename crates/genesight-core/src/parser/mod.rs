@@ -7,7 +7,7 @@ pub mod ancestry;
 pub mod twentythreeandme;
 pub mod vcf;
 
-use crate::models::Variant;
+use crate::models::{GenomeAssembly, Variant};
 
 /// Supported DNA file formats.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -46,6 +46,35 @@ pub fn detect_format(content: &str) -> Result<FileFormat, ParseError> {
         };
     }
     Err(ParseError::UnrecognizedFormat)
+}
+
+/// A parsed DNA file including both variants and detected metadata.
+#[derive(Debug, Clone)]
+pub struct ParsedFile {
+    /// Parsed genetic variants.
+    pub variants: Vec<Variant>,
+    /// Detected genome assembly from the file headers.
+    pub assembly: GenomeAssembly,
+}
+
+/// Parse DNA content with auto-detected format, returning variants and metadata.
+///
+/// This is the recommended entry point when assembly information is needed.
+/// For backwards compatibility, see [`parse_auto`] which discards metadata.
+pub fn parse_auto_with_metadata(content: &str) -> Result<ParsedFile, ParseError> {
+    let format = detect_format(content)?;
+    let (variants, assembly) = match format {
+        FileFormat::TwentyThreeAndMe => (
+            twentythreeandme::parse(content)?,
+            twentythreeandme::detect_assembly(content),
+        ),
+        FileFormat::AncestryDna => (
+            ancestry::parse(content)?,
+            ancestry::detect_assembly(content),
+        ),
+        FileFormat::Vcf => (vcf::parse(content)?, vcf::detect_assembly(content)),
+    };
+    Ok(ParsedFile { variants, assembly })
 }
 
 /// Parse DNA content with auto-detected format.

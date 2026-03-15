@@ -36,7 +36,7 @@ pub mod parser;
 pub mod report;
 pub mod scorer;
 
-use models::{AnnotationConfig, ConfidenceTier, Report, Variant};
+use models::{AnnotationConfig, ConfidenceTier, GenomeAssembly, Report, Variant};
 use rusqlite::Connection;
 
 /// Errors that can occur during the full analysis pipeline.
@@ -80,6 +80,9 @@ const SNPEDIA_ATTRIBUTION: &str =
 /// filters results to the requested confidence tiers, and returns a complete
 /// `Report` struct.
 ///
+/// Assembly tracking defaults to `Unknown` for both input and database.
+/// Use [`analyze_with_assembly`] to pass detected assembly information.
+///
 /// # Arguments
 ///
 /// * `variants` - Parsed variants from a DNA raw data file
@@ -106,10 +109,48 @@ pub fn analyze(
     )
 }
 
+/// Run the full analysis pipeline with explicit assembly information.
+///
+/// Like [`analyze`], but accepts genome assembly information for the input
+/// file and database so that mismatch warnings can be generated in the report.
+///
+/// # Arguments
+///
+/// * `variants` - Parsed variants from a DNA raw data file
+/// * `main_db` - Connection to `genesight.db`
+/// * `snpedia_db` - Optional connection to `snpedia.db`
+/// * `tiers` - Which confidence tiers to include in the report (empty = all tiers)
+/// * `input_assembly` - Genome assembly detected from the input file
+/// * `db_assembly` - Genome assembly of the reference database
+///
+/// # Errors
+///
+/// Returns `AnalyzeError::Annotate` if database queries fail, or
+/// `AnalyzeError::Report` if report generation fails.
+pub fn analyze_with_assembly(
+    variants: &[Variant],
+    main_db: &Connection,
+    snpedia_db: Option<&Connection>,
+    tiers: &[ConfidenceTier],
+    input_assembly: GenomeAssembly,
+    db_assembly: GenomeAssembly,
+) -> Result<Report, AnalyzeError> {
+    analyze_with_config_and_assembly(
+        variants,
+        main_db,
+        snpedia_db,
+        tiers,
+        &AnnotationConfig::default(),
+        input_assembly,
+        db_assembly,
+    )
+}
+
 /// Run the full analysis pipeline with selective database configuration.
 ///
 /// Like [`analyze`], but accepts an [`AnnotationConfig`] to control which
-/// databases are queried during annotation.
+/// databases are queried during annotation. Assembly tracking defaults to
+/// `Unknown` for both input and database.
 pub fn analyze_with_config(
     variants: &[Variant],
     main_db: &Connection,
@@ -117,10 +158,38 @@ pub fn analyze_with_config(
     tiers: &[ConfidenceTier],
     config: &AnnotationConfig,
 ) -> Result<Report, AnalyzeError> {
+    analyze_with_config_and_assembly(
+        variants,
+        main_db,
+        snpedia_db,
+        tiers,
+        config,
+        GenomeAssembly::Unknown,
+        GenomeAssembly::Unknown,
+    )
+}
+
+/// Run the full analysis pipeline with selective database configuration and
+/// explicit assembly information.
+///
+/// This is the most configurable entry point. It accepts both an
+/// [`AnnotationConfig`] for controlling which databases to query and genome
+/// assembly information for generating mismatch warnings.
+pub fn analyze_with_config_and_assembly(
+    variants: &[Variant],
+    main_db: &Connection,
+    snpedia_db: Option<&Connection>,
+    tiers: &[ConfidenceTier],
+    config: &AnnotationConfig,
+    input_assembly: GenomeAssembly,
+    db_assembly: GenomeAssembly,
+) -> Result<Report, AnalyzeError> {
     tracing::info!(
         total_variants = variants.len(),
         tier_filter = ?tiers,
         snpedia = snpedia_db.is_some(),
+        input_assembly = %input_assembly,
+        db_assembly = %db_assembly,
         "starting analysis pipeline"
     );
 
@@ -154,16 +223,61 @@ pub fn analyze_with_config(
         attributions.push(SNPEDIA_ATTRIBUTION.to_string());
     }
 
-    // Step 5: Build the Report
+    // Step 5: Check assembly compatibility and build warnings
+    let assembly_warnings = check_assembly_compatibility(input_assembly, db_assembly);
+
+    // Step 6: Build the Report
     let report = Report {
         total_variants: variants.len(),
         annotated_variants: annotated_count,
         results: filtered,
         attributions,
         disclaimer: DISCLAIMER.to_string(),
+        input_assembly,
+        db_assembly,
+        assembly_warnings,
     };
 
     Ok(report)
+}
+
+/// Check assembly compatibility and generate warning messages.
+///
+/// Returns an empty vector if assemblies are compatible, or a list of
+/// human-readable warning strings if there are potential issues.
+fn check_assembly_compatibility(
+    input_assembly: GenomeAssembly,
+    db_assembly: GenomeAssembly,
+) -> Vec<String> {
+    let mut warnings = Vec::new();
+
+    if !input_assembly.is_compatible_with(db_assembly) {
+        warnings.push(format!(
+            "Assembly mismatch: input file uses {input_assembly} but database uses {db_assembly}. \
+             Position-based lookups may return incorrect results. \
+             Consider using a database built for the same assembly as your input file."
+        ));
+    }
+
+    if input_assembly == GenomeAssembly::Unknown {
+        warnings.push(
+            "Could not detect genome assembly from input file. \
+             Assuming compatibility with database. Results may be unreliable \
+             if the file uses a different assembly than the database."
+                .to_string(),
+        );
+    }
+
+    if db_assembly == GenomeAssembly::Unknown && input_assembly != GenomeAssembly::Unknown {
+        warnings.push(
+            "Could not determine genome assembly of the database. \
+             Results may be unreliable if the database uses a different \
+             assembly than the input file."
+                .to_string(),
+        );
+    }
+
+    warnings
 }
 
 #[cfg(test)]
@@ -293,5 +407,113 @@ mod tests {
 
         let html = report::render(&report_data, report::OutputFormat::Html).expect("html");
         assert!(html.contains("<!DOCTYPE html>"));
+    }
+
+    #[test]
+    fn analyze_default_assembly_is_unknown() {
+        let db = setup_main_db();
+        let report = analyze(&[], &db, None, &[]).expect("analyze");
+        assert_eq!(report.input_assembly, GenomeAssembly::Unknown);
+        assert_eq!(report.db_assembly, GenomeAssembly::Unknown);
+    }
+
+    #[test]
+    fn analyze_with_assembly_mismatch_produces_warning() {
+        let db = setup_main_db();
+        let report = analyze_with_assembly(
+            &[],
+            &db,
+            None,
+            &[],
+            GenomeAssembly::GRCh37,
+            GenomeAssembly::GRCh38,
+        )
+        .expect("analyze");
+
+        assert_eq!(report.input_assembly, GenomeAssembly::GRCh37);
+        assert_eq!(report.db_assembly, GenomeAssembly::GRCh38);
+        assert!(report
+            .assembly_warnings
+            .iter()
+            .any(|w| w.contains("mismatch")));
+    }
+
+    #[test]
+    fn analyze_with_matching_assembly_no_mismatch_warning() {
+        let db = setup_main_db();
+        let report = analyze_with_assembly(
+            &[],
+            &db,
+            None,
+            &[],
+            GenomeAssembly::GRCh37,
+            GenomeAssembly::GRCh37,
+        )
+        .expect("analyze");
+
+        assert!(report
+            .assembly_warnings
+            .iter()
+            .all(|w| !w.contains("mismatch")));
+    }
+
+    #[test]
+    fn check_assembly_compatible_no_mismatch() {
+        let warnings = check_assembly_compatibility(GenomeAssembly::GRCh37, GenomeAssembly::GRCh37);
+        assert!(warnings.iter().all(|w| !w.contains("mismatch")));
+    }
+
+    #[test]
+    fn check_assembly_incompatible_has_mismatch() {
+        let warnings = check_assembly_compatibility(GenomeAssembly::GRCh37, GenomeAssembly::GRCh38);
+        assert!(warnings.iter().any(|w| w.contains("mismatch")));
+    }
+
+    #[test]
+    fn check_assembly_unknown_input_has_warning() {
+        let warnings =
+            check_assembly_compatibility(GenomeAssembly::Unknown, GenomeAssembly::GRCh37);
+        assert!(warnings
+            .iter()
+            .any(|w| w.contains("Could not detect genome assembly from input file")));
+    }
+
+    #[test]
+    fn check_assembly_unknown_db_has_warning() {
+        let warnings =
+            check_assembly_compatibility(GenomeAssembly::GRCh37, GenomeAssembly::Unknown);
+        assert!(warnings
+            .iter()
+            .any(|w| w.contains("Could not determine genome assembly of the database")));
+    }
+
+    #[test]
+    fn query_db_assembly_from_metadata_table() {
+        let conn = Connection::open_in_memory().expect("open in-memory db");
+        conn.execute_batch(
+            "CREATE TABLE db_metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+             INSERT INTO db_metadata (key, value) VALUES ('assembly', 'GRCh37');",
+        )
+        .expect("setup");
+
+        let assembly = db::query_db_assembly(&conn);
+        assert_eq!(assembly, GenomeAssembly::GRCh37);
+    }
+
+    #[test]
+    fn query_db_assembly_returns_unknown_when_no_table() {
+        let conn = Connection::open_in_memory().expect("open in-memory db");
+        let assembly = db::query_db_assembly(&conn);
+        assert_eq!(assembly, GenomeAssembly::Unknown);
+    }
+
+    #[test]
+    fn query_db_assembly_returns_unknown_when_key_missing() {
+        let conn = Connection::open_in_memory().expect("open in-memory db");
+        conn.execute_batch("CREATE TABLE db_metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);")
+            .expect("setup");
+
+        let assembly = db::query_db_assembly(&conn);
+        assert_eq!(assembly, GenomeAssembly::Unknown);
     }
 }

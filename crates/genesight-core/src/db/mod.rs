@@ -6,6 +6,7 @@ pub mod gwas;
 pub mod pharmgkb;
 pub mod snpedia;
 
+use crate::models::GenomeAssembly;
 use rusqlite::Connection;
 
 /// Errors that can occur during database operations.
@@ -28,4 +29,22 @@ pub fn open_database(path: &std::path::Path) -> Result<Connection, DbError> {
     }
     let conn = Connection::open(path)?;
     Ok(conn)
+}
+
+/// Query the genome assembly version stored in the database metadata.
+///
+/// Reads the `assembly` key from the `db_metadata` table. Returns
+/// `GenomeAssembly::Unknown` if the table does not exist, the key is
+/// missing, or the value is not a recognized assembly identifier.
+pub fn query_db_assembly(conn: &Connection) -> GenomeAssembly {
+    let result: Result<String, _> = conn.query_row(
+        "SELECT value FROM db_metadata WHERE key = 'assembly'",
+        [],
+        |row| row.get(0),
+    );
+
+    match result {
+        Ok(value) => GenomeAssembly::from_header_line(&value),
+        Err(_) => GenomeAssembly::Unknown,
+    }
 }
