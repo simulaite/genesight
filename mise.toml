@@ -1,0 +1,126 @@
+[tools]
+rust = "latest"
+
+[tasks.build]
+description = "Build all crates"
+run = "cargo build"
+
+[tasks.build-release]
+description = "Build optimized release binary"
+run = "cargo build --release"
+
+[tasks.test]
+description = "Run all tests"
+run = "cargo test"
+
+[tasks.test-core]
+description = "Run genesight-core tests only"
+run = "cargo test -p genesight-core"
+
+[tasks.lint]
+description = "Run clippy linter"
+run = "cargo clippy -- -D warnings"
+
+[tasks.fmt]
+description = "Format code"
+run = "cargo fmt"
+
+[tasks.fmt-check]
+description = "Check code formatting"
+run = "cargo fmt -- --check"
+
+[tasks.check]
+description = "Type-check without building"
+run = "cargo check"
+
+[tasks.ci]
+description = "Run all CI checks (fmt, clippy, test)"
+run = """
+cargo fmt -- --check
+cargo clippy -- -D warnings
+cargo test
+"""
+
+# --- GUI ---
+
+[tasks.gui]
+description = "Launch GeneSight GUI"
+run = "cargo run -p genesight-gui"
+
+[tasks.gui-release]
+description = "Launch GeneSight GUI (optimized release build)"
+run = "cargo run --release -p genesight-gui"
+
+# --- Analyze commands ---
+
+[tasks.analyze-23andme]
+description = "Analyze sample 23andMe file (markdown)"
+run = "cargo run -p genesight-cli -- analyze tests/fixtures/sample_23andme.txt"
+
+[tasks.analyze-ancestry]
+description = "Analyze sample AncestryDNA file"
+run = "cargo run -p genesight-cli -- analyze tests/fixtures/sample_ancestry.txt"
+
+[tasks.analyze-vcf]
+description = "Analyze sample VCF file"
+run = "cargo run -p genesight-cli -- analyze tests/fixtures/sample.vcf"
+
+[tasks.analyze-html]
+description = "Analyze sample 23andMe and output HTML report"
+run = "cargo run -p genesight-cli -- analyze tests/fixtures/sample_23andme.txt -f html -o report.html"
+
+[tasks.analyze-json]
+description = "Analyze sample 23andMe and output JSON"
+run = "cargo run -p genesight-cli -- analyze tests/fixtures/sample_23andme.txt -f json"
+
+[tasks.analyze-tui]
+description = "Launch interactive TUI dashboard with sample data"
+run = "cargo run -p genesight-cli -- analyze tests/fixtures/sample_23andme.txt --interactive"
+
+# --- Database commands ---
+
+[tasks.db-info]
+description = "Show database status and statistics"
+run = "cargo run -p genesight-cli -- info"
+
+[tasks.fetch-all]
+description = "Download all reference databases"
+run = "cargo run -p genesight-cli -- fetch --all"
+
+[tasks.fetch-clinvar]
+description = "Download ClinVar database"
+run = "cargo run -p genesight-cli -- fetch --clinvar"
+
+[tasks.fetch-gwas]
+description = "Download GWAS Catalog"
+run = "cargo run -p genesight-cli -- fetch --gwas"
+
+[tasks.fetch-snpedia]
+description = "Download SNPedia (CC-BY-NC-SA 3.0)"
+run = "cargo run -p genesight-cli -- fetch --snpedia"
+
+# --- Seed scripts ---
+
+[tasks.seed-clinvar]
+description = "Fetch and import ClinVar data"
+run = "bash data/fetch/fetch_clinvar.sh"
+
+[tasks.seed-gwas]
+description = "Fetch and import GWAS Catalog data"
+run = "bash data/fetch/fetch_gwas.sh"
+
+[tasks.seed-dbsnp]
+description = "Fetch and import dbSNP/gnomAD frequencies"
+run = "bash data/fetch/fetch_dbsnp.sh"
+
+[tasks.seed-pharmgkb]
+description = "Fetch and import PharmGKB data"
+run = "bash data/fetch/fetch_pharmgkb.sh"
+
+[tasks.seed-snpedia]
+description = "Fetch and import SNPedia data"
+run = "python3 data/fetch/fetch_snpedia.py"
+
+[tasks.seed-all]
+description = "Fetch and import all databases"
+depends = ["seed-clinvar", "seed-gwas", "seed-dbsnp", "seed-pharmgkb"]
